@@ -1,0 +1,4 @@
+conf.py
+*.pyc
+led_*
+test*
