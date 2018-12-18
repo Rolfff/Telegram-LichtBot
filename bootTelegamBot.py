@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from lampeLib import light
+from lib.lampeLib import light
 import logging
 import conf as Conf
 import threading, time

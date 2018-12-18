@@ -13,6 +13,11 @@ import Adafruit_GPIO.SPI as SPIimport
 import Adafruit_WS2801
 import Adafruit_GPIO.SPI as SPI
 
+import os, imp
+def load_src(name, fpath):
+    return imp.load_source(name, os.path.join(os.path.dirname(__file__), fpath))
+ 
+load_src("ledLib", "ledLib.py")
 from ledLib import led
 #from lib.rainbowLib import RainbowThread
 

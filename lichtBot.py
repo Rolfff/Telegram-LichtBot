@@ -4,7 +4,7 @@
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
                           ConversationHandler)
-from lampeLib import light
+from lib.lampeLib import light
 import logging
 import conf as Conf
 from lib.tempDatabaseLib import TempDatabase
