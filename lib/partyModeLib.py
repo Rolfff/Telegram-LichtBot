@@ -10,6 +10,8 @@ load_src("lampeLib", "lampeLib.py")
 from lampeLib import light
 import logging
 import threading, time
+load_src("singletonLib", "singletonLib.py")
+from singletonLib import OneThreadOnly
 
 class PartyMode:
 
@@ -18,7 +20,7 @@ class PartyMode:
     def regenbogen(self,wait):
         self.th = RaspberryThread()
         self.th.start(wait)
-        return self.th
+        return OneThreadOnly(self.th)
         
     
 class RaspberryThread(threading.Thread):
@@ -52,6 +54,9 @@ class RaspberryThread(threading.Thread):
 
     def stop(self):
         self.running = False
+        
+    def isRunning(self):
+        return self.running
     
 
         
@@ -63,9 +68,11 @@ class RaspberryThread(threading.Thread):
 def main():
     
     pm = PartyMode()
-    th = pm.regenbogen(0.1)
-    time.sleep(10)
-    th.stop()
+    oneTh = pm.regenbogen(0.1)
+    time.sleep(2)
+    oneTh = pm.regenbogen(0.5)
+    time.sleep(4)
+    oneTh.stop()
 
 if __name__ == '__main__':
     main()
