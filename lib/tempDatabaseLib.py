@@ -46,7 +46,10 @@ class TempDatabase:
     def insertValues(self,temperature,humidity):
         if humidity < 101:
             sql = "INSERT INTO "+Conf.sqlite['tempTable']+" (temp,humidity) VALUES ("+str(temperature)+","+str(humidity)+")"
-            self.execute(sql)
+        else:
+            tmp = self.getValue()
+            sql = "INSERT INTO "+Conf.sqlite['tempTable']+" (temp,humidity) VALUES ("+str(tmp['temp'])+","+str(tmp['hum'])+")"
+        self.execute(sql)
     
     def deleteToOldValues(self,overWeeks):
         today = DT.date.today()

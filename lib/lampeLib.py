@@ -19,19 +19,23 @@ def load_src(name, fpath):
  
 load_src("ledLib", "ledLib.py")
 from ledLib import led
+load_src("singletonLib", "singletonLib.py")
+from singletonLib import OneThreadOnly
+load_src("conf", "../conf.py")
+import conf as Conf
 #from lib.rainbowLib import RainbowThread
 
 # Configure the count of pixels:
-PIXEL_COUNT = 31
-ANZSTEGE = 6
+PIXEL_COUNT = Conf.pin['pixelCount']
+ANZSTEGE = Conf.pin['anzalStege']
 #Reinfolge der LED-Adressen pro Steg im Uhrzeigersin
-PIXEL_MAP = [0,1,2,3,4,20,19,18,17,16,21,22,23,24,25,9,8,7,6,5,10,11,12,13,14,30,29,28,27,26] 
-BOTTOM_LED = 15
+PIXEL_MAP = Conf.pin['pixelMap']
+BOTTOM_LED = Conf.pin['bottomLed']
 # The WS2801 library makes use of the BCM pin numbering scheme. See the README.md for details.
 
 # Alternatively specify a hardware SPI connection on /dev/spidev0.0:
-SPI_PORT   = 0
-SPI_DEVICE = 0
+SPI_PORT   = Conf.pin['spiPort']
+SPI_DEVICE = Conf.pin['spiDevice']
 
 class light:
 
@@ -51,7 +55,7 @@ class light:
                 tmp.append(l)
                 pixelCounter = pixelCounter + 1
             self.lightmatrix.append(tmp)
-        self.pixels.clear()
+        #self.pixels.clear()
         #print(self.lightmatrix)
     
     def setPixel(self,pixel,r = 0,g = 0,b = 0):
@@ -72,7 +76,12 @@ class light:
         # Now make sure to call show() to update the pixels with the colors set above!
         self.pixels.show()
     
-    def on(self,r=255,g=255,b=255,wait=0.1,):
+    def on(self,r=255,g=255,b=255,wait=0.1):
+        oneTh = OneThreadOnly()
+        oneTh.stop()
+        self.setHorizontal(r,g,b,wait)
+        
+    def setHorizontal(self,r=255,g=255,b=255,wait=0.1):
         for y in range(len(self.lightmatrix[1])):
             for x in range(len(self.lightmatrix)):
                 self.setPixel(self.lightmatrix[x][y],r,g,b)
@@ -83,6 +92,8 @@ class light:
         self.setPixel(self.bottomled,r,g,b)
             
     def off(self,r=0,g=0,b=0,wait=0.1):
+        oneTh = OneThreadOnly()
+        oneTh.stop()
         self.setPixel(self.bottomled,r,g,b)
         if wait > 0:
             time.sleep(wait)

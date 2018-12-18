@@ -11,6 +11,8 @@ from lib.tempDatabaseLib import TempDatabase
 from lib.userDatabaseLib import UserDatabase
 from lib.tempPlot import TempPlot
 import datetime as DT
+from lib.singletonLib import OneThreadOnly, OneSpeedOnly
+from lib.partyModeLib import PartyMode
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -18,7 +20,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS = range(5)
+LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS, PARTY = range(6)
 
 reply_keyboard_login = [['Login', 'Bye',],
                         ['Sensor']]
@@ -28,12 +30,14 @@ reply_keyboard_admin = [['Nächster Request', 'Zeige alle User'],
                         ['Lösche User','Verlasse AdminMode']]
 reply_keyboard_adminRequest = [['Ja', 'Löschen']]
 reply_keyboard_quit = [['Abbrechen']]
+reply_keyboard_party = [['Farbwechsel horizontal','Verlasse PartyMode']]
 
 markup_login = ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True)
 markup_light = ReplyKeyboardMarkup(reply_keyboard_light, one_time_keyboard=True)
 markup_admin = ReplyKeyboardMarkup(reply_keyboard_admin, one_time_keyboard=True)
 markup_adminRequest = ReplyKeyboardMarkup(reply_keyboard_adminRequest, one_time_keyboard=True)
 markup_quit = ReplyKeyboardMarkup(reply_keyboard_quit, one_time_keyboard=True)
+markup_party = ReplyKeyboardMarkup(reply_keyboard_party, one_time_keyboard=True)
 
 licht = light()
 
@@ -53,7 +57,7 @@ def checkAthentifizierung(update,user_data):
             reply_markup=markup_login)
         return LOGIN
     else:
-        if ret == 1:
+        if ret == 1 and user_data['status'] == LOGIN:
             user_data['keyboard'] = markup_light
             user_data['status'] = LIGHT
         #else:
@@ -234,12 +238,48 @@ def deleteUsers(bot, update, user_data):
         reply_markup=user_data['keyboard'])
     return user_data['status']
     
-def quitAdmin(bot, update, user_data):
+def quitSpecialMode(bot, update, user_data):
     user_data['keyboard'] = markup_light
+    if user_data['status'] == PARTY:
+        update.message.reply_text("EXIT --PARTYMODE--",
+            reply_markup=user_data['keyboard'])
+    if user_data['status'] == ADMIN:
+        update.message.reply_text("EXIT --ADMINMODE--",
+            reply_markup=user_data['keyboard'])
     user_data['status'] = LIGHT
-    update.message.reply_text("EXIT --ADMINMODE--",
-        reply_markup=user_data['keyboard'])
     return user_data['status']
+
+def switchToPartyModus(bot, update, user_data):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        user_data['keyboard'] = markup_party
+        user_data['status'] = PARTY
+        update.message.reply_text("-->PARTYMODE<--",
+                                  reply_markup=user_data['keyboard'])
+        return user_data['status']
+    else:
+        update.message.reply_text('Sorry, du hast leider keine Rechte.')
+
+def changeColorHorizontal(bot, update, user_data):
+    update.message.reply_text(
+                'Hat leider noch eine bug.\n ',
+                reply_markup=user_data['keyboard'])
+    return user_data['status']
+#Todo Singelton löuft irgendwie leider nicht mehr
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        if user_data['chatId'] != Conf.telegram['adminChatID']:
+                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das ChangeColorHorizontal an geschaltet.")
+        
+        oneSp = OneSpeedOnly()
+        update.message.reply_text(
+                'Party... wooob!!!,\n '+
+                'Mit /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren.\n'+
+                'Aktuelle Geschwindigkeit: '+str(oneSp.getSpeed()),
+                reply_markup=user_data['keyboard'])
+        pm = PartyMode()
+        pm.regenbogen()
+        return user_data['status']
 
 def done(bot, update, user_data):
     if 'choice' in user_data:
@@ -261,6 +301,28 @@ def lightOn(bot, update, user_data):
         licht.on()
         return user_data['status']
     
+def setSpeed(bot, update, user_data, args):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        try:
+            sp = float(args[0])
+            onlySp = OneSpeedOnly()
+            onlySp.setSpeed(sp)
+            if user_data['chatId'] != Conf.telegram['adminChatID']:
+                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat speed auf "+args[0]+" geändert.")
+            update.message.reply_text(
+                'Die Geschwindigkeit wurde auf '+args[0]+' geändert.',
+                reply_markup=user_data['keyboard'])
+            
+        except ValueError as e:
+            update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
+                reply_markup=user_data['keyboard'])
+        except Exception as e:
+            update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
+                reply_markup=user_data['keyboard'])
+        finally:
+            return user_data['status']
+        
 def rgb(bot, update, user_data, args):
     checkAthentifizierung(update,user_data)
     if user_data['isAlowed'] == 1:
@@ -293,6 +355,31 @@ def lightOff(bot, update, user_data):
             reply_markup=user_data['keyboard'])
         licht.off()
         return user_data['status']
+    
+def help(bot,update, user_data):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        if user_data['status'] == LIGHT:
+            update.message.reply_text(
+                'Nutze das Keyboard für Standard-Aktionen. \n\n'+
+                'Weitere Funktionen: \n'+
+                '- /help zeigt diesen Text an \n'+
+                '- /rgb 0-255 0-255 0-255 färbt Licht buntisch \n'+
+                '- /admin wechselt in die Userverwaltung \n' +
+                '- /party wechselt in den Partymodus ',
+                reply_markup=user_data['keyboard'])
+        if user_data['status'] == PARTY:
+            oneSp = OneSpeedOnly()
+            update.message.reply_text(
+                'Nutze das Keyboard für Standard-Aktionen. \n\n'+
+                'Weitere Funktionen: \n'+
+                '- /help zeigt diesen Text an \n'+
+                '- /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren.'+
+                'Aktuelle Geschwindigkeit: '+str(oneSp.getSpeed()),
+                '- /admin wechselt in die Userverwaltung \n' +
+                '- /exit verläst den Partymodus ',
+                reply_markup=user_data['keyboard'])
+    return user_data['status']
     
 def error(bot, update, error):
     """Log Errors caused by Updates."""
@@ -350,8 +437,40 @@ def main():
                                    pass_args=True),
                     CommandHandler('admin',
                                    switchToAdminModus,
-                                   pass_user_data=True)
+                                   pass_user_data=True),
+                    CommandHandler('help',
+                                   help,
+                                   pass_user_data=True),
+                    CommandHandler('party',
+                                   switchToPartyModus,
+                                   pass_user_data=True),
+                    MessageHandler(Filters.text,
+                                    help,
+                                    pass_user_data=True)
                     ],
+            PARTY:[ RegexHandler('^Farbwechsel horizontal$',
+                                 changeColorHorizontal,
+                                 pass_user_data=True),
+                    RegexHandler('^Verlasse PartyMode$',
+                                 quitSpecialMode,
+                                 pass_user_data=True),
+                    CommandHandler('speed',
+                                   setSpeed,
+                                   pass_user_data=True,
+                                   pass_args=True),
+                    CommandHandler('admin',
+                                   switchToAdminModus,
+                                   pass_user_data=True),
+                    CommandHandler('exit',
+                                   quitSpecialMode,
+                                   pass_user_data=True),
+                    CommandHandler('help',
+                                   help,
+                                   pass_user_data=True),
+                    MessageHandler(Filters.text,
+                                    help,
+                                    pass_user_data=True)
+                ],
             GETDAYS:[RegexHandler('^Abbrechen$$',
                                  exitAdminRequest,
                                  pass_user_data=True),
@@ -382,7 +501,7 @@ def main():
                                  deleteUsers,
                                  pass_user_data=True),
                     RegexHandler('^Verlasse AdminMode$',
-                                 quitAdmin,
+                                 quitSpecialMode,
                                  pass_user_data=True)
                            ],
         },
@@ -401,6 +520,10 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
+    
+    th=OneThreadOnly()
+    th.stop()
+    print ('th: '+str(th.running()))
 
 
 

@@ -11,16 +11,21 @@ from lampeLib import light
 import logging
 import threading, time
 load_src("singletonLib", "singletonLib.py")
-from singletonLib import OneThreadOnly
+from singletonLib import OneThreadOnly, OneSpeedOnly
 
 class PartyMode:
 
     th = None
+    speed = None
+    
+    def __init__(self):
+        self.speed = OneSpeedOnly()
 
-    def regenbogen(self,wait):
+    def regenbogen(self):
         self.th = RaspberryThread()
-        self.th.start(wait)
+        self.th.start(self.speed)
         return OneThreadOnly(self.th)
+    
         
     
 class RaspberryThread(threading.Thread):
@@ -38,18 +43,23 @@ class RaspberryThread(threading.Thread):
         led = light()
         #255^3 = 16581375 Farben?
         while self.running:
-            led.on(255,0,0,self.wait)
-            time.sleep(self.wait)
-            led.on(127,127,0,self.wait)
-            time.sleep(self.wait)
-            led.on(0,255,0,self.wait)
-            time.sleep(self.wait)
-            led.on(0,127,127,self.wait)
-            time.sleep(self.wait)
-            led.on(0,0,255,self.wait)
-            time.sleep(self.wait)
-            led.on(127,0,127,self.wait)
-            time.sleep(self.wait)
+            led.setHorizontal(255,0,0,self.wait.getSpeed())
+            time.sleep(self.wait.getSpeed())
+            if self.running:
+                led.setHorizontal(127,127,0,self.wait.getSpeed())
+                time.sleep(self.wait.getSpeed())
+            if self.running:
+                led.setHorizontal(0,255,0,self.wait.getSpeed())
+                time.sleep(self.wait.getSpeed())
+            if self.running:
+                led.setHorizontal(0,127,127,self.wait.getSpeed())
+                time.sleep(self.wait.getSpeed())
+            if self.running:
+                led.setHorizontal(0,0,255,self.wait.getSpeed())
+                time.sleep(self.wait.getSpeed())
+            if self.running:
+                led.setHorizontal(127,0,127,self.wait.getSpeed())
+                time.sleep(self.wait.getSpeed())
             
 
     def stop(self):
@@ -66,13 +76,13 @@ class RaspberryThread(threading.Thread):
 #th.stop()
 
 def main():
-    
+    sp = OneSpeedOnly()
     pm = PartyMode()
-    oneTh = pm.regenbogen(0.1)
-    time.sleep(2)
-    oneTh = pm.regenbogen(0.5)
-    time.sleep(4)
-    oneTh.stop()
+    th2 = pm.regenbogen()
+    time.sleep(5)
+    th=OneThreadOnly()
+    th.stop()
+    th2.stop()
 
 if __name__ == '__main__':
     main()
