@@ -372,7 +372,7 @@ def rgb(bot, update, user_data, args):
                 bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das Licht Rot:"+args[0]+" Grün:"+args[1]+" Blau:"+args[2]+" geschaltet.")
             update.message.reply_text(
                 'Es werde Rot:'+args[0]+' Grün:'+args[1]+' Blau:'+args[2]+' ...',
-                reply_markup=user_data['keyboard']))
+                reply_markup=user_data['keyboard'])
             licht.on(rot,grün,blau)
         except ValueError as e:
             update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
