@@ -24,8 +24,10 @@ LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS, PARTY = range(6)
 
 reply_keyboard_login = [['Login', 'Bye',],
                         ['Sensor']]
-reply_keyboard_light = [['Licht an', 'Licht aus'],
-                        ['Sensor','Logout']]
+reply_keyboard_light_Abo = [['Licht an', 'Licht aus'],
+                        ['Sensor','Abo','Logout']]
+reply_keyboard_light_quitAbo = [['Licht an', 'Licht aus'],
+                        ['Sensor','quit Abo','Logout']]
 reply_keyboard_admin = [['Nächster Request', 'Zeige alle User'],
                         ['Lösche User','Verlasse AdminMode']]
 reply_keyboard_adminRequest = [['Ja', 'Löschen']]
@@ -33,7 +35,7 @@ reply_keyboard_quit = [['Abbrechen']]
 reply_keyboard_party = [['Farbwechsel horizontal','Verlasse PartyMode']]
 
 markup_login = ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True)
-markup_light = ReplyKeyboardMarkup(reply_keyboard_light, one_time_keyboard=True)
+markup_light = ReplyKeyboardMarkup(reply_keyboard_light_Abo, one_time_keyboard=True)
 markup_admin = ReplyKeyboardMarkup(reply_keyboard_admin, one_time_keyboard=True)
 markup_adminRequest = ReplyKeyboardMarkup(reply_keyboard_adminRequest, one_time_keyboard=True)
 markup_quit = ReplyKeyboardMarkup(reply_keyboard_quit, one_time_keyboard=True)
@@ -42,11 +44,13 @@ markup_party = ReplyKeyboardMarkup(reply_keyboard_party, one_time_keyboard=True)
 licht = light()
 
 def checkAthentifizierung(update,user_data):
+    userDB = UserDatabase()
     if user_data['chatId'] != Conf.telegram['adminChatID']:
-        userDB = UserDatabase()
         ret = userDB.isAlowed(user_data['chatId'])
     else:
         ret = 1
+        if userDB.existUser(user_data['chatId']) == 0:
+            userDB.insertNewUser(user_data,0)
     user_data['isAlowed'] = ret
     #print('ret'+str(ret))
     if ret == 0:
@@ -59,13 +63,16 @@ def checkAthentifizierung(update,user_data):
     else:
         if ret == 1 and user_data['status'] == LOGIN:
             user_data['keyboard'] = markup_light
+            if user_data['wetterAbo'] == 1:
+                user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
+
             user_data['status'] = LIGHT
         #else:
             #nichts
     
 
 def inilasizeChatData(message,user_data):
-    #userDB = UserDatabase()
+    userDB = UserDatabase()
     #userDB.deleteUser(str(message.chat.id))
     user_data['langCode'] = str(message.from_user.language_code)
     user_data['chatId'] = str(message.chat.id)
@@ -74,7 +81,35 @@ def inilasizeChatData(message,user_data):
     user_data['keyboard'] = markup_login
     user_data['status'] = LOGIN
     user_data['userRequest'] = None
+    if userDB.existUser(user_data['chatId']):
+        user_data['wetterAbo'] = userDB.getWetterAbo(user_data['chatId'])
+        if user_data['wetterAbo'] == 1:
+            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
+
+    else :
+        user_data['wetterAbo'] = 0
     print('chatID:'+user_data['chatId']+' Username: '+user_data['firstname']+' '+user_data['lastname']);
+    
+def switchWetterAbo(bot, update, user_data):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        userDB = UserDatabase()
+        if user_data['wetterAbo'] == 1:
+            userDB.updateWetterAbo(user_data['chatId'],0)
+            user_data['wetterAbo'] = 0
+            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_Abo, one_time_keyboard=True)
+            text='OK. Du bekommst keine Meldungen mehr, wenn sich die Temperaturen unterscheiden.'
+        else:
+            userDB.updateWetterAbo(user_data['chatId'],1)
+            user_data['wetterAbo'] = 1
+            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
+            text='Ich melde mich bei dir sobald es draußen wärmer oder kälter ist als im Zimmer.'
+    else:
+        text='Du hast leider keine Berechtiungen für diese Funktion.'
+    update.message.reply_text(
+        text,
+        reply_markup=user_data['keyboard'])
+    return user_data['status']
     
 def getSensor(bot,update,user_data):
     checkAthentifizierung(update,user_data)
@@ -91,7 +126,7 @@ def getSensor(bot,update,user_data):
                   )
     finally:
         update.message.reply_text(
-            'Werte: Time:'+str(werte['datetime'])+' Temp:'+str(werte['temp'])+' Hum:'+str(werte['hum']),
+            'Werte: Time:'+str(werte['datetime'])+' Temp:'+str(werte['temp'])+' Hum:'+str(werte['hum']) +' DWD_Temp:'+str(werte['dwdtemp'])+' DWD_Hum:'+str(werte['dwdhum']),
             reply_markup=user_data['keyboard'])
     return user_data['status']
 
@@ -118,6 +153,8 @@ def checkPasswort(bot, update, user_data):
     print('m'+passwort)
     if passwort == Conf.telegram['passwort']:
         if user_data['chatId'] == Conf.telegram['adminChatID']:
+            userDB = UserDatabase()
+            userDB.insertNewUser(user_data,0)
             user_data['keyboard'] = markup_light
             user_data['status'] = LIGHT
             update.message.reply_text(
@@ -279,6 +316,7 @@ def changeColorHorizontal(bot, update, user_data):
                 reply_markup=user_data['keyboard'])
         pm = PartyMode()
         pm.regenbogen()
+        
         return user_data['status']
 
 def done(bot, update, user_data):
@@ -331,10 +369,10 @@ def rgb(bot, update, user_data, args):
             grün = int(args[1])
             blau = int(args[2])
             if user_data['chatId'] != Conf.telegram['adminChatID']:
-                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das Licht an geschaltet.")
+                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das Licht Rot:"+args[0]+" Grün:"+args[1]+" Blau:"+args[2]+" geschaltet.")
             update.message.reply_text(
                 'Es werde Rot:'+args[0]+' Grün:'+args[1]+' Blau:'+args[2]+' ...',
-                reply_markup=markup_light)
+                reply_markup=user_data['keyboard']))
             licht.on(rot,grün,blau)
         except ValueError as e:
             update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
@@ -430,6 +468,12 @@ def main():
                                  pass_user_data=True),
                     RegexHandler('^Licht aus$',
                                  lightOff,
+                                 pass_user_data=True),
+                    RegexHandler('^Abo$',
+                                 switchWetterAbo,
+                                 pass_user_data=True),
+                    RegexHandler('^quit Abo$',
+                                 switchWetterAbo,
                                  pass_user_data=True),
                     CommandHandler('rgb',
                                    rgb,

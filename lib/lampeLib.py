@@ -23,7 +23,8 @@ load_src("singletonLib", "singletonLib.py")
 from singletonLib import OneThreadOnly
 load_src("conf", "../conf.py")
 import conf as Conf
-#from lib.rainbowLib import RainbowThread
+#load_src("partyModeLib", "partyModeLib.py")
+#from partyModeLib import PartyMode
 
 # Configure the count of pixels:
 PIXEL_COUNT = Conf.pin['pixelCount']

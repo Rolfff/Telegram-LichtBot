@@ -7,14 +7,18 @@ class OneThreadOnly:
     singleton = None
     thread = None
    
-    def __new__(cls, *args, **kwargs):  
+    def __new__(cls, *args, **kwargs):
+        #Wird einmal erstellt
         if not cls.singleton:
             cls.singleton = object.__new__(OneThreadOnly)  
         return cls.singleton  
    
-    def __init__(self, th=None):
+    def __init__(self, th):
         if th is not None:
-            self.stop()
+            if self.thread is not None:
+                print ('19: thread ist not None')
+                self.thread.stop()
+            print ('21: th ist not None')
             self.thread = th
         
     def running(self):
@@ -22,6 +26,7 @@ class OneThreadOnly:
             print ('th ist None')
             return False
         else:
+            print ('th ist not None')
             return self.thread.isRunning()
     
     def stop(self):
@@ -58,7 +63,7 @@ class OneOnly:
         return cls.singleton  
    
     def __init__(self, name):
-        print("Singelton überschreiben ")
+        print("Singelton überschreiben: "+name)
         self.name = name  
    
     def print_name(self):  
@@ -67,11 +72,11 @@ class OneOnly:
 def main(): 
     test1 = OneOnly("Willock")  
    
-    if OneOnly.singleton:  
-        test2 = OneOnly.singleton  
-    #else:  
+     
+   # test2 = OneOnly.singleton  
+      
     test2 = OneOnly("NONONO")  
-    assert test1 == test2  
+    #assert test1 == test2  
     print("test1.name: ", test1.name)  
     print("test2.name: ", test2.name)  
     test1.print_name()

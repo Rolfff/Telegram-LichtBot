@@ -76,13 +76,13 @@ class RaspberryThread(threading.Thread):
 #th.stop()
 
 def main():
-    sp = OneSpeedOnly()
+   # sp = OneSpeedOnly()
     pm = PartyMode()
     th2 = pm.regenbogen()
     time.sleep(5)
     th=OneThreadOnly()
     th.stop()
-    th2.stop()
+    #th2.stop()
 
 if __name__ == '__main__':
     main()
