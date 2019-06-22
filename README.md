@@ -17,6 +17,9 @@ siehe auch Quelle [2]:
 ### Sonstiges:
 - Micro-USB zu Netzteil: https://www.amazon.de/Delock-82697-Stecker-Kabelenden-schwarz/dp/B01A9GLG6Q/
 - jumper wire cable Kabel: https://www.amazon.de/gp/product/B00OK74ABO/
+- ca 50cm 3x1,5mm NYM-Leitung
+- 1 Schelle + M3 Schraube zur befestigung des Nezteils an der NYM-Leitung
+- 1 M3 Schraube zur befestigung des PI-Gehäuses mit dem Netzteil
 
 ## Todo:
 - 3D Model hinzufügen
