@@ -86,7 +86,10 @@ def main():
     from tempDatabaseLib import TempDatabase
     tmpDB = TempDatabase()
     db = TempPlot()
-    db.plot(tmpDB,Conf.tempExport['days'])
+    try:
+        db.plot(tmpDB,Conf.tempExport['days'])
+    except Exception as e:
+        print('Error: '+str(e))
     
 
 if __name__ == '__main__':
