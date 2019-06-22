@@ -31,6 +31,7 @@ siehe auch Quelle [2]:
 ## Quellen:
 [1]: https://tutorials-raspberrypi.de/raspberry-pi-ws2801-rgb-led-streifen-anschliessen-steuern/ "RGB-LED mit PI"
 1. RGB-LED mit PI: https://tutorials-raspberrypi.de/raspberry-pi-ws2801-rgb-led-streifen-anschliessen-steuern/
+
 [2]: https://tutorials-raspberrypi.de/raspberry-pi-luftfeuchtigkeit-temperatur-messen-dht11-dht22/ "Temperatur mit PI"
 2. Temperatur mit PI: https://tutorials-raspberrypi.de/raspberry-pi-luftfeuchtigkeit-temperatur-messen-dht11-dht22/
 
