@@ -6,5 +6,4 @@ __*
 images/*.png
 database/*.db
 storeTemp_DB.py
-storeTemp_POST.py
 ws2801_example.py
