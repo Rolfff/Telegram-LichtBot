@@ -29,6 +29,7 @@ siehe auch Quelle [2]:
 - Fehler in TEmeraturgraph fixen oder ander Lib nutzen
 - Partymodus feritg progrmmieren Thread-Problem lösen
 - Repositorys aufräumen, bzw struckur reinbringen. 
+- ledLib.py und lampeLib.py in Lib-Ornder verschieben
 
 
 ## Quellen:
