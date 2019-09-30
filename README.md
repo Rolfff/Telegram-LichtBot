@@ -20,9 +20,9 @@ siehe auch Quelle [2]:
 - ca 50cm 3x1,5mm NYM-Leitung
 - 1 Schelle + M3 Schraube zur befestigung des Nezteils an der NYM-Leitung
 - 1 M3 Schraube zur befestigung des PI-Gehäuses mit dem Netzteil
+- 3D-Model der Lampe drucken. -> ./Dokumentation/3Dmodel_lampe.stl
 
 ## Todo:
-- 3D Model hinzufügen
 - Temperatur-Controler und SQL-DB von Webseite hinzufügen
 - BootBot.py erklären, Fals stromausfällt PI bot bootet
 - Kronjob Temeratur aufziechnen dokumentieren
