@@ -4,13 +4,14 @@
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
                           ConversationHandler)
-from lampeLib import light
+from lib.lampeLib import light
 import logging
 import conf as Conf
 from lib.tempDatabaseLib import TempDatabase
 from lib.userDatabaseLib import UserDatabase
 from lib.tempPlot import TempPlot
 import datetime as DT
+from lib.partyModeLib import PartyMode
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -18,31 +19,37 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS = range(5)
+LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS, PARTY = range(6)
 
 reply_keyboard_login = [['Login', 'Bye',],
                         ['Sensor']]
-reply_keyboard_light = [['Licht an', 'Licht aus'],
-                        ['Sensor','Logout']]
+reply_keyboard_light_Abo = [['Licht an', 'Licht aus'],
+                        ['Sensor','Abo','Logout']]
+reply_keyboard_light_quitAbo = [['Licht an', 'Licht aus'],
+                        ['Sensor','quit Abo','Logout']]
 reply_keyboard_admin = [['Nächster Request', 'Zeige alle User'],
                         ['Lösche User','Verlasse AdminMode']]
 reply_keyboard_adminRequest = [['Ja', 'Löschen']]
 reply_keyboard_quit = [['Abbrechen']]
+reply_keyboard_party = [['Farbwechsel horizontal','Verlasse PartyMode']]
 
 markup_login = ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True)
-markup_light = ReplyKeyboardMarkup(reply_keyboard_light, one_time_keyboard=True)
+markup_light = ReplyKeyboardMarkup(reply_keyboard_light_Abo, one_time_keyboard=True)
 markup_admin = ReplyKeyboardMarkup(reply_keyboard_admin, one_time_keyboard=True)
 markup_adminRequest = ReplyKeyboardMarkup(reply_keyboard_adminRequest, one_time_keyboard=True)
 markup_quit = ReplyKeyboardMarkup(reply_keyboard_quit, one_time_keyboard=True)
+markup_party = ReplyKeyboardMarkup(reply_keyboard_party, one_time_keyboard=True)
 
 licht = light()
 
 def checkAthentifizierung(update,user_data):
+    userDB = UserDatabase()
     if user_data['chatId'] != Conf.telegram['adminChatID']:
-        userDB = UserDatabase()
         ret = userDB.isAlowed(user_data['chatId'])
     else:
         ret = 1
+        if userDB.existUser(user_data['chatId']) == 0:
+            userDB.insertNewUser(user_data,0)
     user_data['isAlowed'] = ret
     #print('ret'+str(ret))
     if ret == 0:
@@ -53,15 +60,18 @@ def checkAthentifizierung(update,user_data):
             reply_markup=markup_login)
         return LOGIN
     else:
-        if ret == 1:
+        if ret == 1 and user_data['status'] == LOGIN:
             user_data['keyboard'] = markup_light
+            if user_data['wetterAbo'] == 1:
+                user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
+
             user_data['status'] = LIGHT
         #else:
             #nichts
     
 
 def inilasizeChatData(message,user_data):
-    #userDB = UserDatabase()
+    userDB = UserDatabase()
     #userDB.deleteUser(str(message.chat.id))
     user_data['langCode'] = str(message.from_user.language_code)
     user_data['chatId'] = str(message.chat.id)
@@ -70,7 +80,35 @@ def inilasizeChatData(message,user_data):
     user_data['keyboard'] = markup_login
     user_data['status'] = LOGIN
     user_data['userRequest'] = None
+    if userDB.existUser(user_data['chatId']):
+        user_data['wetterAbo'] = userDB.getWetterAbo(user_data['chatId'])
+        if user_data['wetterAbo'] == 1:
+            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
+
+    else :
+        user_data['wetterAbo'] = 0
     print('chatID:'+user_data['chatId']+' Username: '+user_data['firstname']+' '+user_data['lastname']);
+    
+def switchWetterAbo(bot, update, user_data):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        userDB = UserDatabase()
+        if user_data['wetterAbo'] == 1:
+            userDB.updateWetterAbo(user_data['chatId'],0)
+            user_data['wetterAbo'] = 0
+            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_Abo, one_time_keyboard=True)
+            text='OK. Du bekommst keine Meldungen mehr, wenn sich die Temperaturen unterscheiden.'
+        else:
+            userDB.updateWetterAbo(user_data['chatId'],1)
+            user_data['wetterAbo'] = 1
+            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
+            text='Ich melde mich bei dir sobald es draußen wärmer oder kälter ist als im Zimmer.'
+    else:
+        text='Du hast leider keine Berechtiungen für diese Funktion.'
+    update.message.reply_text(
+        text,
+        reply_markup=user_data['keyboard'])
+    return user_data['status']
     
 def getSensor(bot,update,user_data):
     checkAthentifizierung(update,user_data)
@@ -87,7 +125,7 @@ def getSensor(bot,update,user_data):
                   )
     finally:
         update.message.reply_text(
-            'Werte: Time:'+str(werte['datetime'])+' Temp:'+str(werte['temp'])+' Hum:'+str(werte['hum']),
+            'Werte: Time:'+str(werte['datetime'])+' Temp:'+str(werte['temp'])+' Hum:'+str(werte['hum']) +' DWD_Temp:'+str(werte['dwdtemp'])+' DWD_Hum:'+str(werte['dwdhum']),
             reply_markup=user_data['keyboard'])
     return user_data['status']
 
@@ -114,6 +152,8 @@ def checkPasswort(bot, update, user_data):
     print('m'+passwort)
     if passwort == Conf.telegram['passwort']:
         if user_data['chatId'] == Conf.telegram['adminChatID']:
+            userDB = UserDatabase()
+            userDB.insertNewUser(user_data,0)
             user_data['keyboard'] = markup_light
             user_data['status'] = LIGHT
             update.message.reply_text(
@@ -234,12 +274,49 @@ def deleteUsers(bot, update, user_data):
         reply_markup=user_data['keyboard'])
     return user_data['status']
     
-def quitAdmin(bot, update, user_data):
+def quitSpecialMode(bot, update, user_data):
     user_data['keyboard'] = markup_light
+    if user_data['status'] == PARTY:
+        update.message.reply_text("EXIT --PARTYMODE--",
+            reply_markup=user_data['keyboard'])
+    if user_data['status'] == ADMIN:
+        update.message.reply_text("EXIT --ADMINMODE--",
+            reply_markup=user_data['keyboard'])
     user_data['status'] = LIGHT
-    update.message.reply_text("EXIT --ADMINMODE--",
-        reply_markup=user_data['keyboard'])
     return user_data['status']
+
+def switchToPartyModus(bot, update, user_data):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        user_data['keyboard'] = markup_party
+        user_data['status'] = PARTY
+        update.message.reply_text("-->PARTYMODE<--",
+                                  reply_markup=user_data['keyboard'])
+        return user_data['status']
+    else:
+        update.message.reply_text('Sorry, du hast leider keine Rechte.')
+
+def changeColorHorizontal(bot, update, user_data):
+ #   update.message.reply_text(
+ #               'Hat leider noch eine bug.\n ',
+ #               reply_markup=user_data['keyboard'])
+ #   return user_data['status']
+
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        if user_data['chatId'] != Conf.telegram['adminChatID']:
+                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das ChangeColorHorizontal an geschaltet.")
+        
+        
+        update.message.reply_text(
+                'Party... wooob!!!,\n '+
+                'Mit /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren.\n'+
+                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton),
+                reply_markup=user_data['keyboard'])
+        pm = PartyMode()
+        pm.regenbogenHorizontal()
+        
+        return user_data['status']
 
 def done(bot, update, user_data):
     if 'choice' in user_data:
@@ -261,6 +338,27 @@ def lightOn(bot, update, user_data):
         licht.on()
         return user_data['status']
     
+def setSpeed(bot, update, user_data, args):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        try:
+            sp = float(args[0])
+            Conf.OneSpeedSingleton = sp
+            if user_data['chatId'] != Conf.telegram['adminChatID']:
+                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat speed auf "+args[0]+" geändert.")
+            update.message.reply_text(
+                'Die Geschwindigkeit wurde auf '+args[0]+' geändert.',
+                reply_markup=user_data['keyboard'])
+            
+        except ValueError as e:
+            update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
+                reply_markup=user_data['keyboard'])
+        except Exception as e:
+            update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
+                reply_markup=user_data['keyboard'])
+        finally:
+            return user_data['status']
+        
 def rgb(bot, update, user_data, args):
     checkAthentifizierung(update,user_data)
     if user_data['isAlowed'] == 1:
@@ -269,10 +367,10 @@ def rgb(bot, update, user_data, args):
             grün = int(args[1])
             blau = int(args[2])
             if user_data['chatId'] != Conf.telegram['adminChatID']:
-                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das Licht an geschaltet.")
+                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das Licht Rot:"+args[0]+" Grün:"+args[1]+" Blau:"+args[2]+" geschaltet.")
             update.message.reply_text(
                 'Es werde Rot:'+args[0]+' Grün:'+args[1]+' Blau:'+args[2]+' ...',
-                reply_markup=markup_light)
+                reply_markup=user_data['keyboard'])
             licht.on(rot,grün,blau)
         except ValueError as e:
             update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
@@ -293,6 +391,31 @@ def lightOff(bot, update, user_data):
             reply_markup=user_data['keyboard'])
         licht.off()
         return user_data['status']
+    
+def help(bot,update, user_data):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        if user_data['status'] == LIGHT:
+            update.message.reply_text(
+                'Nutze das Keyboard für Standard-Aktionen. \n\n'+
+                'Weitere Funktionen: \n'+
+                '- /help zeigt diesen Text an \n'+
+                '- /rgb 0-255 0-255 0-255 färbt Licht buntisch \n'+
+                '- /admin wechselt in die Userverwaltung \n' +
+                '- /party wechselt in den Partymodus ',
+                reply_markup=user_data['keyboard'])
+        if user_data['status'] == PARTY:
+            
+            update.message.reply_text(
+                'Nutze das Keyboard für Standard-Aktionen. \n\n'+
+                'Weitere Funktionen: \n'+
+                '- /help zeigt diesen Text an \n'+
+                '- /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren.'+
+                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton),
+                '- /admin wechselt in die Userverwaltung \n' +
+                '- /exit verläst den Partymodus ',
+                reply_markup=user_data['keyboard'])
+    return user_data['status']
     
 def error(bot, update, error):
     """Log Errors caused by Updates."""
@@ -344,14 +467,56 @@ def main():
                     RegexHandler('^Licht aus$',
                                  lightOff,
                                  pass_user_data=True),
+                    RegexHandler('^Abo$',
+                                 switchWetterAbo,
+                                 pass_user_data=True),
+                    RegexHandler('^quit Abo$',
+                                 switchWetterAbo,
+                                 pass_user_data=True),
                     CommandHandler('rgb',
                                    rgb,
                                    pass_user_data=True,
                                    pass_args=True),
                     CommandHandler('admin',
                                    switchToAdminModus,
-                                   pass_user_data=True)
+                                   pass_user_data=True),
+                    CommandHandler('help',
+                                   help,
+                                   pass_user_data=True),
+                    CommandHandler('party',
+                                   switchToPartyModus,
+                                   pass_user_data=True),
+                    MessageHandler(Filters.text,
+                                    help,
+                                    pass_user_data=True)
                     ],
+            PARTY:[ RegexHandler('^Farbwechsel horizontal$',
+                                 changeColorHorizontal,
+                                 pass_user_data=True),
+                    RegexHandler('^Verlasse PartyMode$',
+                                 quitSpecialMode,
+                                 pass_user_data=True),
+                    CommandHandler('speed',
+                                   setSpeed,
+                                   pass_user_data=True,
+                                   pass_args=True),
+                    CommandHandler('admin',
+                                   switchToAdminModus,
+                                   pass_user_data=True),
+                    CommandHandler('exit',
+                                   quitSpecialMode,
+                                   pass_user_data=True),
+                    CommandHandler('help',
+                                   help,
+                                   pass_user_data=True),
+                    CommandHandler('rgb',
+                                   rgb,
+                                   pass_user_data=True,
+                                   pass_args=True),
+                    MessageHandler(Filters.text,
+                                    help,
+                                    pass_user_data=True)
+                ],
             GETDAYS:[RegexHandler('^Abbrechen$$',
                                  exitAdminRequest,
                                  pass_user_data=True),
@@ -382,7 +547,7 @@ def main():
                                  deleteUsers,
                                  pass_user_data=True),
                     RegexHandler('^Verlasse AdminMode$',
-                                 quitAdmin,
+                                 quitSpecialMode,
                                  pass_user_data=True)
                            ],
         },
@@ -401,6 +566,10 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
+    
+    if Conf.OneThreadSingleton is not None:
+        if Conf.OneThreadSingleton.isRunning:
+            Conf.OneThreadSingleton.stop()
 
 
 

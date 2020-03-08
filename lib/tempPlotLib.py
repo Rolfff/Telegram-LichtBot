@@ -26,7 +26,7 @@ class TempPlot:
         dates = drange(firstdate, lastdate, delta)
         
         
-        print("werte: "+str(len(werte))+"erste: "+werte[0]['datetime']+" lrtzte "+werte[len(werte)-1]['datetime'])
+        print("werteeee: "+str(len(werte))+"erste: "+werte[0]['datetime']+" lrtzte "+werte[len(werte)-1]['datetime'])
         plt.ion()
         
         plt.clf()
@@ -61,12 +61,15 @@ class TempPlot:
         #    reply_markup=user_data['keyboard'])
 
 def main():
-    
+    #NOT IN USE!!!!!!?????
     from tempDatabaseLib import TempDatabase
     tmpDB = TempDatabase()
     db = TempPlot()
-    db.plot(tmpDB,Conf.tempExport['days'])
-    
+    try:
+        db.plot(tmpDB,Conf.tempExport['days'])
+    except Exception as e:
+        print('Error: '+str(e))
+        
 
 if __name__ == '__main__':
     main()

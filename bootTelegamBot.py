@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from lampeLib import light
+from lib.lampeLib import light
 import logging
 import conf as Conf
 import threading, time
@@ -19,7 +19,7 @@ class bootBot:
         self.th = RaspberryThread()
         self.th.start()
         while True:
-            a = os.system ("ping -c 1 tomatenjoe.com")
+            a = os.system ("ping -c 1 google.com")
             print('a:'+str(a))
             if a == 0:
                 break

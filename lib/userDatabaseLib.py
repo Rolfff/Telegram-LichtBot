@@ -38,8 +38,9 @@ class UserDatabase:
             "chatID	INTEGER NOT NULL,"\
             "firstname	TEXT DEFAULT NULL,"\
             "lastname	TEXT DEFAULT NULL,"\
-            "isAdmin	INTEGER NOT NULL,"\
+            "isAdmin	INTEGER NOT NULL DEFAULT 0,"\
             "alowToDatetime DATE NOT NULL,"\
+            "wetterAbbo	INTEGER NOT NULL DEFAULT 0,"\
             "PRIMARY KEY(chatID)"\
             ");"
         self.execute(sql)
@@ -54,7 +55,7 @@ class UserDatabase:
         isAdmin = -1
         if user_data['chatId'] == Conf.telegram['adminChatID']:
             isAdmin = 1
-        sql = "INSERT INTO "+Conf.sqlite['userTable']+" (chatID,firstname,lastname,isAdmin,alowToDatetime) VALUES ("+str(user_data['chatId'])+",'"+str(user_data['firstname'])+"','"+str(user_data['lastname'])+"',"+str(isAdmin)+",datetime('now','start of day','"+str(days_)+" days'))"
+        sql = "INSERT INTO "+Conf.sqlite['userTable']+" (chatID,firstname,lastname,isAdmin,alowToDatetime,wetterAbbo) VALUES ("+str(user_data['chatId'])+",'"+str(user_data['firstname'])+"','"+str(user_data['lastname'])+"',"+str(isAdmin)+",datetime('now','start of day','"+str(days_)+" days'),0)"
         self.execute(sql)
     
     def updateUserDays(self,chatID,days_=0):
@@ -65,6 +66,43 @@ class UserDatabase:
             isAdmin = 1
         sql =  "UPDATE "+Conf.sqlite['userTable']+" SET isAdmin = "+str(isAdmin)+", alowToDatetime = datetime('now','start of day','"+str(days_)+" days') WHERE chatID = '"+str(chatID)+"'"
         self.execute(sql)
+    
+    def updateWetterAbo(self,chatID,wert=0):
+        sql =  "UPDATE "+Conf.sqlite['userTable']+" SET wetterAbbo = "+str(wert)+" WHERE chatID = '"+str(chatID)+"'"
+        self.execute(sql)
+        
+    def getWetterAbo(self,chatID):
+        bool = 0
+        connection = sqlite3.connect(Conf.sqlite['pathUser'])
+        cursor = connection.cursor()
+        sql = "SELECT wetterAbbo FROM "+Conf.sqlite['userTable']+" WHERE chatID='"+str(chatID)+"'"
+        try:
+            cursor.execute(sql)
+            bool = cursor.fetchone()[0]
+        except Error as e:
+            print(str(e)+" SQL-Query:"+str(sql))
+        finally:
+            connection.close()
+        return bool
+        
+    def getAllWetterAboUsers(self):
+        connection = sqlite3.connect(Conf.sqlite['pathUser'])
+        cursor = connection.cursor()
+        users = []
+        try:
+            cursor.execute("SELECT chatID FROM "+Conf.sqlite['userTable']+" WHERE wetterAbbo = '1' ")
+            rows = cursor.fetchall()
+            for row in rows:
+                print('chatID'+str(row[0]))
+                user = {'chatID':row[0]}
+                users.append(user)
+        except Error as e:
+            print(str(e)+" SQL-Query:"+str(sql))
+        except Exception as e:
+            print(str(e))  
+        finally:
+            connection.close()
+            return users
     
     def deleteUser(self,chatID):
         sql = "DELETE FROM "+Conf.sqlite['userTable']+" WHERE chatID = '"+str(chatID)+"'"
@@ -85,6 +123,8 @@ class UserDatabase:
         return bool
     
     def isAlowed(self,chatID):
+        if chatID == Conf.telegram['adminChatID']:
+            return 1
         bool = 0
         if self.existUser(chatID) == 0:
             return -1
