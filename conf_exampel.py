@@ -44,6 +44,10 @@ tempExport = {'file':'/home/pi/Dokumente/images/lastPic.png',
               #Wieviele Tage geplotet werden sollen
               'days' : 1}
 
+#Not nice, but work ;(
+OneSpeedSingleton = 0.1
+OneThreadSingleton = None
+
 #Quellen:
 #https://tutorials-raspberrypi.de/raspberry-pi-ws2801-rgb-led-streifen-anschliessen-steuern/
 #https://tutorials-raspberrypi.de/raspberry-pi-luftfeuchtigkeit-temperatur-messen-dht11-dht22/

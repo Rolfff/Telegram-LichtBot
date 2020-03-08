@@ -11,7 +11,6 @@ from lib.tempDatabaseLib import TempDatabase
 from lib.userDatabaseLib import UserDatabase
 from lib.tempPlot import TempPlot
 import datetime as DT
-from lib.singletonLib import OneThreadOnly, OneSpeedOnly
 from lib.partyModeLib import PartyMode
 
 # Enable logging
@@ -298,21 +297,21 @@ def switchToPartyModus(bot, update, user_data):
         update.message.reply_text('Sorry, du hast leider keine Rechte.')
 
 def changeColorHorizontal(bot, update, user_data):
-    update.message.reply_text(
-                'Hat leider noch eine bug.\n ',
-                reply_markup=user_data['keyboard'])
-    return user_data['status']
-#Todo Singelton löuft irgendwie leider nicht mehr
+ #   update.message.reply_text(
+ #               'Hat leider noch eine bug.\n ',
+ #               reply_markup=user_data['keyboard'])
+ #   return user_data['status']
+
     checkAthentifizierung(update,user_data)
     if user_data['isAlowed'] == 1:
         if user_data['chatId'] != Conf.telegram['adminChatID']:
                 bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das ChangeColorHorizontal an geschaltet.")
         
-        oneSp = OneSpeedOnly()
+        
         update.message.reply_text(
                 'Party... wooob!!!,\n '+
                 'Mit /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren.\n'+
-                'Aktuelle Geschwindigkeit: '+str(oneSp.getSpeed()),
+                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton),
                 reply_markup=user_data['keyboard'])
         pm = PartyMode()
         pm.regenbogen()
@@ -344,8 +343,7 @@ def setSpeed(bot, update, user_data, args):
     if user_data['isAlowed'] == 1:
         try:
             sp = float(args[0])
-            onlySp = OneSpeedOnly()
-            onlySp.setSpeed(sp)
+            Conf.OneSpeedSingleton = sp
             if user_data['chatId'] != Conf.telegram['adminChatID']:
                 bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat speed auf "+args[0]+" geändert.")
             update.message.reply_text(
@@ -407,13 +405,13 @@ def help(bot,update, user_data):
                 '- /party wechselt in den Partymodus ',
                 reply_markup=user_data['keyboard'])
         if user_data['status'] == PARTY:
-            oneSp = OneSpeedOnly()
+            
             update.message.reply_text(
                 'Nutze das Keyboard für Standard-Aktionen. \n\n'+
                 'Weitere Funktionen: \n'+
                 '- /help zeigt diesen Text an \n'+
                 '- /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren.'+
-                'Aktuelle Geschwindigkeit: '+str(oneSp.getSpeed()),
+                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton),
                 '- /admin wechselt in die Userverwaltung \n' +
                 '- /exit verläst den Partymodus ',
                 reply_markup=user_data['keyboard'])
@@ -511,6 +509,10 @@ def main():
                     CommandHandler('help',
                                    help,
                                    pass_user_data=True),
+                    CommandHandler('rgb',
+                                   rgb,
+                                   pass_user_data=True,
+                                   pass_args=True),
                     MessageHandler(Filters.text,
                                     help,
                                     pass_user_data=True)
@@ -565,9 +567,9 @@ def main():
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
     
-    th=OneThreadOnly()
-    th.stop()
-    print ('th: '+str(th.running()))
+    if Conf.OneThreadSingleton is not None:
+        if Conf.OneThreadSingleton.isRunning:
+            Conf.OneThreadSingleton.stop()
 
 
 

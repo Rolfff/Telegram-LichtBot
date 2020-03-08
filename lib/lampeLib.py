@@ -20,7 +20,7 @@ def load_src(name, fpath):
 load_src("ledLib", "ledLib.py")
 from ledLib import led
 load_src("singletonLib", "singletonLib.py")
-from singletonLib import OneThreadOnly
+from singletonLib import OneThreadOnly, OneSpeedOnly
 load_src("conf", "../conf.py")
 import conf as Conf
 #load_src("partyModeLib", "partyModeLib.py")
@@ -43,8 +43,11 @@ class light:
     lightmatrix = []
     bottomled = None
     pixels = None
-
+    #Conf.OneSpeedSingleton
+    
     def __init__(self):
+        
+        
         #LED Nr 15 ist die Mitte
         self.pixels = Adafruit_WS2801.WS2801Pixels(PIXEL_COUNT, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE), gpio=GPIO)
         self.bottomled= led(BOTTOM_LED)
@@ -78,31 +81,40 @@ class light:
         self.pixels.show()
     
     def on(self,r=255,g=255,b=255,wait=0.1):
-        oneTh = OneThreadOnly()
-        oneTh.stop()
+        self.stopThread()
         self.setHorizontal(r,g,b,wait)
         
-    def setHorizontal(self,r=255,g=255,b=255,wait=0.1):
+    def getWait(self, wait=None):
+        if wait is None:
+            wait = Conf.OneSpeedSingleton
+        return wait
+    
+    def stopThread(self):
+        if Conf.OneThreadSingleton is not None:
+            if Conf.OneThreadSingleton.isRunning:
+                Conf.OneThreadSingleton.stop()
+                time.sleep(Conf.OneSpeedSingleton)
+        
+    def setHorizontal(self,r=255,g=255,b=255,wait=None):
         for y in range(len(self.lightmatrix[1])):
             for x in range(len(self.lightmatrix)):
                 self.setPixel(self.lightmatrix[x][y],r,g,b)
-            if wait > 0:
-                time.sleep(wait)
-        if wait > 0:
-            time.sleep(wait)
+            if self.getWait(wait) > 0:
+                time.sleep(self.getWait(wait))
+        if self.getWait(wait) > 0:
+            time.sleep(self.getWait(wait))
         self.setPixel(self.bottomled,r,g,b)
             
     def off(self,r=0,g=0,b=0,wait=0.1):
-        oneTh = OneThreadOnly()
-        oneTh.stop()
+        self.stopThread()
         self.setPixel(self.bottomled,r,g,b)
-        if wait > 0:
-            time.sleep(wait)
+        if self.getWait(wait) > 0:
+            time.sleep(self.getWait(wait))
         for y in reversed(range(len(self.lightmatrix[1]))):
             for x in range(len(self.lightmatrix)):
                 self.setPixel(self.lightmatrix[x][y],r,g,b)
-            if wait > 0:
-                time.sleep(wait)
+            if self.getWait(wait) > 0:
+                time.sleep(self.getWait(wait))
         
                 
 #    def fadeAllColors(self, wait=0.005):
@@ -112,6 +124,7 @@ class light:
         
                 
     def allOff(self):
+        self.stopThread()
         self.pixels.clear()
         
    
