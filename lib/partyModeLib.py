@@ -6,6 +6,8 @@ def load_src(name, fpath):
  
 load_src("conf", "../conf.py")
 import conf as Conf
+load_src("modiLib", "modiLib.py")
+import modiLib as Modi
 load_src("lampeLib", "lampeLib.py")
 from lampeLib import light
 import logging
@@ -29,23 +31,22 @@ class PartyMode:
         
     def stop(self):
         Conf.OneThreadSingleton.stop()
+    
+    #modi = 'FunktionsName als String'
+    def startModi(self, modi, wait = Conf.OneSpeedSingleton, r=255, g=255, b=255):
+        method_to_call = getattr(Modi, modi)
+        if Conf.OneThreadSingleton is not None:
+            if Conf.OneThreadSingleton.isRunning:
+                Conf.OneThreadSingleton.stop()
+          #      time.sleep(Conf.OneSpeedSingleton)
+        Conf.OneThreadSingleton = RaspberryThread(target=method_to_call, args=(wait,r,g,b,))
+        Conf.OneThreadSingleton.start()
 
     def regenbogenHorizontal(self):
-        Conf.OneThreadSingleton = RaspberryThread(target=runHorizontal, args=(1,2,))
+        Conf.OneThreadSingleton = RaspberryThread(target=Modi.runHorizontal, args=(wait,r,g,b,))
         Conf.OneThreadSingleton.start()
         
-        #wait = 0.05 ist geil
-    def strobo(self, wait = Conf.OneSpeedSingleton, r=255, g=255, b=255):
-        Conf.OneThreadSingleton = RaspberryThread(target=strobo, args=(wait,r,g,b,))
-        Conf.OneThreadSingleton.start()   
     
-    def laufHorizontal(self, wait = Conf.OneSpeedSingleton, r=255, g=255, b=255):
-        Conf.OneThreadSingleton = RaspberryThread(target=laufHorizontal, args=(wait,r,g,b,))
-        Conf.OneThreadSingleton.start()
-        
-    def laufVertikal(self, wait = Conf.OneSpeedSingleton, r=255, g=255, b=255):
-        Conf.OneThreadSingleton = RaspberryThread(target=laufVertikal, args=(wait,r,g,b,))
-        Conf.OneThreadSingleton.start()
         
     
 class RaspberryThread(threading.Thread):
@@ -81,74 +82,6 @@ class RaspberryThread(threading.Thread):
         return self.running
     
     
-def runHorizontal(self,data, key):
-        print("runHorizontal was called : data=%s; key=%s" % (str(data), str(key)))
-         #Todo: Hier könnet man noch Parameter zum dynamischen einstellen mitgeben
-        #ZB: Anzahl der Farb-Stufen und so weiter...
-        led = light()
-        #255^3 = 16581375 Farben?
-        while self.running:
-            led.setHorizontal(255,0,0)
-            time.sleep(Conf.OneSpeedSingleton)
-            if self.running:
-                led.setHorizontal(127,127,0)
-                time.sleep(Conf.OneSpeedSingleton)
-            if self.running:
-                led.setHorizontal(0,255,0)
-                time.sleep(Conf.OneSpeedSingleton)
-            if self.running:
-                led.setHorizontal(0,127,127)
-                time.sleep(Conf.OneSpeedSingleton)
-            if self.running:
-                led.setHorizontal(0,0,255)
-                time.sleep(Conf.OneSpeedSingleton)
-            if self.running:
-                led.setHorizontal(127,0,127)
-                time.sleep(Conf.OneSpeedSingleton)   
-
-def stars(self,data, key):
-    print("stars was called : data=%s; key=%s" % (str(data), str(key)))
-    led = light()
-    #setPixel(self.lightmatrix[x][y],r,g,b)
-
-def strobo(self,wait, r,g,b):
-    print("strobo was called : wait=%s; r=%s; g=%s; b=%s" % (str(wait), str(r), str(g), str(b)))
-    led = light()
-    while self.running:
-        led.all(r,g,b)
-        time.sleep(wait)
-        led.all(0,0,0)
-        #led.allOff(False)
-        time.sleep(wait)
-
-#in Smooshig bestimmt auch seht schön
-def laufHorizontal(self,wait, r,g,b):
-    print("laufHorizontal was called : wait=%s; r=%s; g=%s; b=%s" % (str(wait), str(r), str(g), str(b)))
-    led = light()
-    while self.running:
-        for y in range(1+len(Conf.OneLightmatrix[1])):
-            if y == len(Conf.OneLightmatrix[1]):
-                led.setBottomLed(r,g,b)
-            else:
-                led.setZeile(y,r,g,b)
-            time.sleep(wait)
-            if y-1 == -1:
-                led.setBottomLed(0,0,0)
-            else:
-                led.setZeile(y-1,0,0,0)
-                
-def laufVertikal(self,wait, r,g,b):
-    print("laufVertikal was called : wait=%s; r=%s; g=%s; b=%s" % (str(wait), str(r), str(g), str(b)))
-    led = light()
-    while self.running:
-        for x in range(len(Conf.OneLightmatrix)):
-            led.setSpalte(x,r,g,b)
-            time.sleep(wait)
-            if x-1 == -1:
-                led.setSpalte(len(Conf.OneLightmatrix)-1,0,0,0)
-            else:
-                led.setSpalte(x-1,0,0,0)
-            
 
 def main():
     #led = light()
@@ -159,9 +92,12 @@ def main():
  #  led.all(0,0,0)
     pm = PartyMode()
     #pm.regenbogenHorizontal()
-    pm.laufVertikal(0.05,0,255,0)
+    #result = method_to_call()
+    pm.startModi( 'laufVertikal', 0.05,0,255,0)
+    #pm.laufVertikal(0.05,0,255,0)
     time.sleep(10)
-    
+    pm.startModi( 'laufHorizontal', 0.05,0,255,255)
+    time.sleep(10)
     Conf.OneThreadSingleton.stop()
     
 
