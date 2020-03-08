@@ -47,6 +47,8 @@ tempExport = {'file':'/home/pi/Dokumente/images/lastPic.png',
 #Not nice, but work ;(
 OneSpeedSingleton = 0.1
 OneThreadSingleton = None
+OneLightmatrix = None
+OneLightlist = None
 
 #Quellen:
 #https://tutorials-raspberrypi.de/raspberry-pi-ws2801-rgb-led-streifen-anschliessen-steuern/

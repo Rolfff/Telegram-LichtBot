@@ -39,47 +39,55 @@ SPI_DEVICE = Conf.pin['spiDevice']
 class light:
 
     lightmatrix = []
+    lightlist = []
     bottomled = None
     pixels = None
     #Conf.OneSpeedSingleton
     
     def __init__(self):
         
-        
         #LED Nr 15 ist die Mitte
         self.pixels = Adafruit_WS2801.WS2801Pixels(PIXEL_COUNT, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE), gpio=GPIO)
         self.bottomled= led(BOTTOM_LED)
-        pixelCounter = 0
-        for x in range(ANZSTEGE):
+        
+        if Conf.OneLightmatrix is None or Conf.OneLightlist is None:
+            self.lightlist.append(self.bottomled)
             tmp = []
-            for y in range(int(PIXEL_COUNT/ANZSTEGE)):
-                l = led(PIXEL_MAP[pixelCounter])
+            for x in range(len(PIXEL_MAP)):
+                l = led(PIXEL_MAP[x])
                 tmp.append(l)
-                pixelCounter = pixelCounter + 1
-            self.lightmatrix.append(tmp)
+                self.lightlist.append(l)
+                if int(len(PIXEL_MAP)/ANZSTEGE) == len(tmp):
+                    self.lightmatrix.append(tmp)
+                    tmp = []
+            Conf.OneLightmatrix = self.lightmatrix
+            Conf.OneLightlist = self.lightlist
+            
+        else:
+            self.lightmatrix = Conf.OneLightmatrix
+            self.lightlist = Conf.OneLightlist
         #self.pixels.clear()
         #print(self.lightmatrix)
+    def betrwRGB(self,rgbWert):
+        if rgbWert > 255:
+            rgbWert = 255
+        if rgbWert < 0:
+            rgbWert = 0
+        return int(rgbWert)
+    
+    def setBottomLed(self,r = 0,g = 0,b = 0):
+        self.setPixel(self.bottomled,r,g,b)
     
     def setPixel(self,pixel,r = 0,g = 0,b = 0):
-        if r > 255:
-            r = 255
-        if g > 255:
-            g = 255
-        if b > 255:
-            b = 255
-        if r < 0:
-            r = 0
-        if g < 0:
-            g = 0
-        if b < 0:
-            b = 0
-        pixel.set(r,g,b)
-        self.pixels.set_pixel_rgb(pixel.id, r, g, b)  # Set the RGB color (0-255) of pixel i.
+        
+        pixel.set(self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))
+        self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))  # Set the RGB color (0-255) of pixel i.
         # Now make sure to call show() to update the pixels with the colors set above!
         self.pixels.show()
     
-    def on(self,r=255,g=255,b=255,wait=0.1):
-        self.stopThread()
+    def on(self,r=255,g=255,b=255,wait=0.1,stopThread=True):
+        if stopThread:
+            self.stopThread()
         self.setHorizontal(r,g,b,wait)
         
     def getWait(self, wait=None):
@@ -95,22 +103,38 @@ class light:
         
     def setHorizontal(self,r=255,g=255,b=255,wait=None):
         for y in range(len(self.lightmatrix[1])):
-            for x in range(len(self.lightmatrix)):
-                self.setPixel(self.lightmatrix[x][y],r,g,b)
+            self.setZeile(y,r,g,b)
             if self.getWait(wait) > 0:
                 time.sleep(self.getWait(wait))
         if self.getWait(wait) > 0:
             time.sleep(self.getWait(wait))
         self.setPixel(self.bottomled,r,g,b)
+        
+    def setZeile(self,zeilenNr,r=255,g=255,b=255):
+        for x in range(len(self.lightmatrix)):
+            pixel = self.lightmatrix[x][zeilenNr]
+            pixel.set(self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))
+            #print(pixel)
+            self.pixels.set_pixel_rgb(int(pixel.id), self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))  # Set the RGB color (0-255) of pixel i.
+        # Now make sure to call show() to update the pixels with the colors set above!
+        self.pixels.show()
+        
+    def setSpalte(self,spaltenNr,r=255,g=255,b=255):
+        for y in range(len(self.lightmatrix[spaltenNr])):
+            pixel = self.lightmatrix[spaltenNr][y]
+            pixel.set(self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))
+            self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))  # Set the RGB color (0-255) of pixel i.
+        # Now make sure to call show() to update the pixels with the colors set above!
+        self.pixels.show()
             
-    def off(self,r=0,g=0,b=0,wait=0.1):
-        self.stopThread()
+    def off(self,r=0,g=0,b=0,wait=0.1,stopThread=True):
+        if stopThread:
+            self.stopThread()
         self.setPixel(self.bottomled,r,g,b)
         if self.getWait(wait) > 0:
             time.sleep(self.getWait(wait))
         for y in reversed(range(len(self.lightmatrix[1]))):
-            for x in range(len(self.lightmatrix)):
-                self.setPixel(self.lightmatrix[x][y],r,g,b)
+            self.setZeile(y,r,g,b)
             if self.getWait(wait) > 0:
                 time.sleep(self.getWait(wait))
         
@@ -119,10 +143,22 @@ class light:
 #        th = RainbowThread()
 #        th.start(self.pixels, wait, lightmatrix, self)
 #        return th
+    def all(self,r=255,g=255,b=255):
+        
+        self.pixels.clear()
+        for z in range(len(self.lightlist)):
+            
+            pixel = self.lightlist[z]
+            #print(pixel.id)
+            pixel.set(self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))
+            self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))  # Set the RGB color (0-255) of pixel i.
+        # Now make sure to call show() to update the pixels with the colors set above!
+        self.pixels.show()
         
                 
-    def allOff(self):
-        self.stopThread()
+    def allOff(self,stopThread=True):
+        if stopThread:
+            self.stopThread()
         self.pixels.clear()
         
    
