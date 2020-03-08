@@ -314,7 +314,7 @@ def changeColorHorizontal(bot, update, user_data):
                 'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton),
                 reply_markup=user_data['keyboard'])
         pm = PartyMode()
-        pm.regenbogen()
+        pm.regenbogenHorizontal()
         
         return user_data['status']
 

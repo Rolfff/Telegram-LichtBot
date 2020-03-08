@@ -19,8 +19,6 @@ def load_src(name, fpath):
  
 load_src("ledLib", "ledLib.py")
 from ledLib import led
-load_src("singletonLib", "singletonLib.py")
-from singletonLib import OneThreadOnly, OneSpeedOnly
 load_src("conf", "../conf.py")
 import conf as Conf
 #load_src("partyModeLib", "partyModeLib.py")
