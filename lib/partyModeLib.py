@@ -10,8 +10,7 @@ load_src("lampeLib", "lampeLib.py")
 from lampeLib import light
 import logging
 import threading, time
-load_src("singletonLib", "singletonLib.py")
-from singletonLib import OneThreadOnly
+
 
 class PartyMode:
 
@@ -28,29 +27,52 @@ class PartyMode:
     def setSpeed(self,sp):
         Conf.OneSpeedSingleton = sp
 
-    def regenbogen(self):
-        if Conf.OneThreadSingleton is not None:
-            if Conf.OneThreadSingleton.isRunning:
-                Conf.OneThreadSingleton.stop()
-        Conf.OneThreadSingleton = RaspberryThread()
+    def regenbogenHorizontal(self):
+        Conf.OneThreadSingleton = RaspberryThread(target=runHorizontal, args=(1,2,))
         Conf.OneThreadSingleton.start()
         
     
     def stop(self):
         Conf.OneThreadSingleton.stop()
+        
     
 class RaspberryThread(threading.Thread):
     running = False
     
-    def __init__(self):
+    def __init__(self,target,args):
         self.running = False
-        super(RaspberryThread, self).__init__()
+        self.__target = target
+        self.__args = args
+        threading.Thread.__init__(self)
+        #super(RaspberryThread, self).__init__()
+        
 
     def start(self):
+        led = light()
+        led.stopThread()
         self.running = True
         super(RaspberryThread, self).start()
 
     def run(self):
+        try:
+            if self.__target:
+                self.__target(self,*self.__args)#, **self.__kwargs)
+        finally:
+        # Avoid a refcycle if the thread is running a function with
+        # an argument that has a member that points to the thread.
+            del self.__target, self.__args#, self.__kwargs
+
+    def stop(self):
+        self.running = False
+        
+    def isRunning(self):
+        return self.running
+    
+    
+def runHorizontal(self,data, key):
+        print("runHorizontal was called : data=%s; key=%s" % (str(data), str(key)))
+         #Todo: Hier könnet man noch Parameter zum dynamischen einstellen mitgeben
+        #ZB: Anzahl der Farb-Stufen und so weiter...
         led = light()
         #255^3 = 16581375 Farben?
         while self.running:
@@ -70,26 +92,14 @@ class RaspberryThread(threading.Thread):
                 time.sleep(Conf.OneSpeedSingleton)
             if self.running:
                 led.setHorizontal(127,0,127)
-                time.sleep(Conf.OneSpeedSingleton)
-            
-
-    def stop(self):
-        self.running = False
+                time.sleep(Conf.OneSpeedSingleton)   
         
-    def isRunning(self):
-        return self.running
-    
 
-        
-#th = RaspberryThread()
-#th.start()
-#time.sleep(10)
-#th.stop()
 
 def main():
    
     pm = PartyMode()
-    pm.regenbogen()
+    pm.regenbogenHorizontal()
     time.sleep(10)
     
     Conf.OneThreadSingleton.stop()
