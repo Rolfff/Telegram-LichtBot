@@ -27,9 +27,8 @@ siehe auch Quelle [2]:
 - BootBot.py erklären, Fals stromausfällt PI bot bootet
 - Kronjob Temeratur aufziechnen dokumentieren
 - Fehler in TEmeraturgraph fixen oder ander Lib nutzen
-- Partymodus feritg progrmmieren Thread-Problem lösen
+- Partymodus weiter progrmmieren bzw. vollständig in Bot intigrieren
 - Repositorys aufräumen, bzw struckur reinbringen. 
-- ledLib.py und lampeLib.py in Lib-Ornder verschieben
 
 
 ## Quellen:
