@@ -338,17 +338,17 @@ def selectPartyModi(bot, update, user_data):
             if funkName in ModiLib.speedEmpfehlungen:
                 listOfSpeeds = ModiLib.speedEmpfehlungen.get(funkName)
                 if listOfSpeeds is not None:
-                    textOfSpeeds='Folgende Geschwindigkeiten werden empfohlen:\n'
+                    textOfSpeeds='Mit /speed [duble] in Sekunden kannst du die Geschwindigkeit regulieren.\n'+
+                        'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton)+'\n'+
+                        'Folgende Geschwindigkeiten werden empfohlen:\n'
                     for speed in listOfSpeeds:
                         textOfSpeeds=textOfSpeeds+'- /speed '+str(speed)+'\n'
             pm = PartyMode()
             #pm.startModi( 'funkName', wait=0.05,r=0,g=255,b=255)
-            pm.startModi(str(funkName), Conf.OneSpeedSingleton,0,255,255)
+            pm.startModi(str(funkName), Conf.OneSpeedSingleton,Conf.OneRGB.get('r'),Conf.OneRGB.get('g'),Conf.OneRGB.get('b'))
             update.message.reply_text(
                 'Modus: "'+funkName+'"\n'+
                 'Party... wooob!!!,\n '+
-                'Mit /speed [duble] in Sekunden kannst du die Geschwindigkeit regulieren.\n'+
-                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton)+'\n'+
                 textOfSpeeds,
                 reply_markup=user_data['keyboard'])
             
@@ -394,6 +394,30 @@ def setSpeed(bot, update, user_data, args):
                 reply_markup=user_data['keyboard'])
         finally:
             return user_data['status']
+        
+def setRGB(bot, update, user_data, args):
+    checkAthentifizierung(update,user_data)
+    if user_data['isAlowed'] == 1:
+        try:
+            Conf.OneRGB['r'] = int(args[0])
+            Conf.OneRGB['g'] = int(args[1])
+            Conf.OneRGB['b'] = int(args[2])
+            if user_data['chatId'] != Conf.telegram['adminChatID']:
+                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das Licht Rot:"+args[0]+" Grün:"+args[1]+" Blau:"+args[2]+" geschaltet.")
+            update.message.reply_text(
+                'Es werde Rot:'+args[0]+' Grün:'+args[1]+' Blau:'+args[2]+' ...',
+                reply_markup=user_data['keyboard'])
+            
+        except ValueError as e:
+            update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
+                reply_markup=user_data['keyboard'])
+        except Exception as e:
+            update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
+                reply_markup=user_data['keyboard'])
+        finally:
+            return user_data['status']
+
+
         
 def rgb(bot, update, user_data, args):
     checkAthentifizierung(update,user_data)
@@ -490,7 +514,7 @@ def main():
                                    help,
                                    pass_user_data=True),
                     CommandHandler('rgb',
-                                   rgb,
+                                   setRGB,
                                    pass_user_data=True,
                                    pass_args=True)   
                 ]

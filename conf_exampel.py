@@ -50,7 +50,7 @@ OneSpeedSingleton = 0.1
 OneThreadSingleton = None
 OneLightmatrix = None
 OneLightlist = None
-
+OneRGB={'r':255,'g':255,'b':255}
 
 #Quellen:
 #https://tutorials-raspberrypi.de/raspberry-pi-ws2801-rgb-led-streifen-anschliessen-steuern/

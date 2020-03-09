@@ -9,6 +9,7 @@ import conf as Conf
 load_src("lampeLib", "lampeLib.py")
 from lampeLib import light
 import time
+import random 
 
 #Funktionen hier registrieren für Partymode
 # Funktionen Map{ Funk-Name: Tastertur beschriftung}
@@ -58,14 +59,23 @@ def faidHorizontal(self,wait, r,g,b):
 
 def stars(self,wait, r,g,b):
     print("stars was called : wait=%s; r=%s; g=%s; b=%s" % (str(wait), str(r), str(g), str(b)))
+    ledAnzahl = 2
     led = light()
-    #setPixel(self.lightmatrix[x][y],r,g,b)
+    while self.running:
+        temp=[]
+        for i in range(ledAnzahl):
+            pixel = Conf.OneLightlist[random.randrange(len(Conf.OneLightlist))]
+            temp.append(pixel)
+            led.setPixel(pixel,Conf.OneRGB.get('r'),Conf.OneRGB.get('g'),Conf.OneRGB.get('b'))
+        time.sleep(random.uniform(0.000001, 0.1))
+        for i in range(len(temp)):
+            led.setPixel(temp[i],0,0,0)
 
 def strobo(self,wait, r,g,b):
     print("strobo was called : wait=%s; r=%s; g=%s; b=%s" % (str(wait), str(r), str(g), str(b)))
     led = light()
     while self.running:
-        led.all(r,g,b)
+        led.all(Conf.OneRGB.get('r'),Conf.OneRGB.get('g'),Conf.OneRGB.get('b'))
         time.sleep(Conf.OneSpeedSingleton)
         led.all(0,0,0)
         #led.allOff(False)
@@ -78,7 +88,7 @@ def laufHorizontal(self,wait, r,g,b):
     while self.running:
         for y in range(1+len(Conf.OneLightmatrix[1])):
             if y == len(Conf.OneLightmatrix[1]):
-                led.setBottomLed(r,g,b)
+                led.setBottomLed(Conf.OneRGB.get('r'),Conf.OneRGB.get('g'),Conf.OneRGB.get('b'))
             else:
                 led.setZeile(y,r,g,b)
             time.sleep(Conf.OneSpeedSingleton)
@@ -93,7 +103,7 @@ def laufVertikal(self,wait, r,g,b):
     led = light()
     while self.running:
         for x in range(len(Conf.OneLightmatrix)):
-            led.setSpalte(x,r,g,b)
+            led.setSpalte(x,Conf.OneRGB.get('r'),Conf.OneRGB.get('g'),Conf.OneRGB.get('b'))
             time.sleep(Conf.OneSpeedSingleton)
             if x-1 == -1:
                 led.setSpalte(len(Conf.OneLightmatrix)-1,0,0,0)
