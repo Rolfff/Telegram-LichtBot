@@ -68,6 +68,18 @@ class light:
             self.lightlist = Conf.OneLightlist
         #self.pixels.clear()
         #print(self.lightmatrix)
+                
+    # Define the wheel function to interpolate between different hues.
+    def wheel(self,pos):
+        if pos < 85:
+            return Adafruit_WS2801.RGB_to_color(pos * 3, 255 - pos * 3, 0)
+        elif pos < 170:
+            pos -= 85
+            return Adafruit_WS2801.RGB_to_color(255 - pos * 3, 0, pos * 3)
+        else:
+            pos -= 170
+            return Adafruit_WS2801.RGB_to_color(0, pos * 3, 255 - pos * 3)
+            
     def betrwRGB(self,rgbWert):
         if rgbWert > 255:
             rgbWert = 255

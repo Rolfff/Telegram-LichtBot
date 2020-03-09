@@ -88,11 +88,10 @@ def main():
     pm = PartyMode()
     #pm.regenbogenHorizontal()
     #result = method_to_call()
-    pm.startModi( 'laufVertikal', 0.05,0,255,0)
+    pm.startModi( 'faideAll', 0.05,0,255,0)
     #pm.laufVertikal(0.05,0,255,0)
     time.sleep(10)
-    pm.startModi( 'laufHorizontal', 0.05,0,255,255)
-    time.sleep(10)
+    
     Conf.OneThreadSingleton.stop()
     
 

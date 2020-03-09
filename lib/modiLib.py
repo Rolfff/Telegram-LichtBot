@@ -14,22 +14,25 @@ import random
 #Funktionen hier registrieren für Partymode
 # Funktionen Map{ Funk-Name: Tastertur beschriftung}
 tastertur = {'faidHorizontal': 'faid Hori.',
-         'stars': 'Dico-Kugel',
+         'stars': 'Disco-Kugel',
          'strobo': 'Strobo Licht',
          'laufHorizontal': 'Hori. Lauflicht',
-         'laufVertikal': 'Verti. Lauflicht'}
+         'laufVertikal': 'Verti. Lauflicht',
+         'faideAll': 'faide'}
 #Funktionen Map{Funk-Name, Beschreiung in Help}
 textbefehl = {'faidHorizontal': 'faid Horizontal',
-         'stars': 'Eine Dico-Kugel',
+         'stars': 'Imitiert eine Disco-Kugel',
          'strobo': 'Strobo Licht',
          'laufHorizontal': 'Horizontales Lauflicht',
-         'laufVertikal': 'Vertikales Lauflicht'}
+         'laufVertikal': 'Vertikales Lauflicht',
+         'faideAll': 'faide'}
 #Funktionen Map{Funk-Name, Speed-Empfehlung in Double als Liste von schnell nach langsam}
 speedEmpfehlungen = {'faidHorizontal': [0.01,0.05,0.1],
          'stars': None,
          'strobo': [0.05,0.1,0.5],
          'laufHorizontal': [0.01,0.05,0.1],
-         'laufVertikal': [0.01,0.05,0.1]}
+         'laufVertikal': [0.01,0.05,0.1],
+         'faideAll': [0.01,0.05,0.1,0.5]}
 
 
 def faidHorizontal(self,wait, r,g,b):
@@ -109,3 +112,14 @@ def laufVertikal(self,wait, r,g,b):
                 led.setSpalte(len(Conf.OneLightmatrix)-1,0,0,0)
             else:
                 led.setSpalte(x-1,0,0,0)
+                
+def faideAll(self, wait, r,g,b):
+    print("faideAll was called : wait=%s; r=%s; g=%s; b=%s" % (str(wait), str(r), str(g), str(b)))
+    led = light()
+    while self.running:
+        for j in range(256): # one cycle of all 256 colors in the wheel
+            for i in range(led.pixels.count()):
+                led.pixels.set_pixel(i, led.wheel(((256 // led.pixels.count() + j)) % 256) )
+            led.pixels.show()
+            if Conf.OneSpeedSingleton > 0:
+                time.sleep(Conf.OneSpeedSingleton)

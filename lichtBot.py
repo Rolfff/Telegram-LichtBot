@@ -338,9 +338,9 @@ def selectPartyModi(bot, update, user_data):
             if funkName in ModiLib.speedEmpfehlungen:
                 listOfSpeeds = ModiLib.speedEmpfehlungen.get(funkName)
                 if listOfSpeeds is not None:
-                    textOfSpeeds='Mit /speed [duble] in Sekunden kannst du die Geschwindigkeit regulieren.\n'+
+                    textOfSpeeds=('Mit /speed [duble] in Sekunden kannst du die Geschwindigkeit regulieren.\n'+
                         'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton)+'\n'+
-                        'Folgende Geschwindigkeiten werden empfohlen:\n'
+                        'Folgende Geschwindigkeiten werden empfohlen:\n')
                     for speed in listOfSpeeds:
                         textOfSpeeds=textOfSpeeds+'- /speed '+str(speed)+'\n'
             pm = PartyMode()
