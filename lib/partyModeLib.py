@@ -42,12 +42,7 @@ class PartyMode:
         Conf.OneThreadSingleton = RaspberryThread(target=method_to_call, args=(wait,r,g,b,))
         Conf.OneThreadSingleton.start()
 
-    def regenbogenHorizontal(self):
-        Conf.OneThreadSingleton = RaspberryThread(target=Modi.runHorizontal, args=(wait,r,g,b,))
-        Conf.OneThreadSingleton.start()
-        
-    
-        
+  
     
 class RaspberryThread(threading.Thread):
     running = False

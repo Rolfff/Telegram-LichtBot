@@ -11,21 +11,27 @@ from lampeLib import light
 import time
 
 #Funktionen hier registrieren für Partymode
-# Funktionen Map{ Funk-Name: 
-tastertur = {'runHorizontal': 'faidHori',
-         'stars': 'DicoKugel',
+# Funktionen Map{ Funk-Name: Tastertur beschriftung}
+tastertur = {'faidHorizontal': 'faid Hori.',
+         'stars': 'Dico-Kugel',
          'strobo': 'Strobo Licht',
          'laufHorizontal': 'Hori. Lauflicht',
          'laufVertikal': 'Verti. Lauflicht'}
+#Funktionen Map{Funk-Name, Beschreiung in Help}
+textbefehl = {'faidHorizontal': 'faid Horizontal',
+         'stars': 'Eine Dico-Kugel',
+         'strobo': 'Strobo Licht',
+         'laufHorizontal': 'Horizontales Lauflicht',
+         'laufVertikal': 'Vertikales Lauflicht'}
+#Funktionen Map{Funk-Name, Speed-Empfehlung in Double als Liste von schnell nach langsam}
+speedEmpfehlungen = {'faidHorizontal': [0.01,0.05,0.1],
+         'stars': None,
+         'strobo': [0.05,0.1,0.5],
+         'laufHorizontal': [0.01,0.05,0.1],
+         'laufVertikal': [0.01,0.05,0.1]}
 
-textbefehl = {'runHorizontal': 'faidHori',
-         'stars': 'DicoKugel',
-         'strobo': 'StroboLicht',
-         'laufHorizontal': 'HoriLauflicht',
-         'laufVertikal': 'VertiLauflicht'}
 
-
-def runHorizontal(self,wait, r,g,b):
+def faidHorizontal(self,wait, r,g,b):
         print("runHorizontal was called : wait=%s; r=%s; g=%s; b=%s" % (str(wait), str(r), str(g), str(b)))
         #Todo: Hier könnet man noch Parameter zum dynamischen einstellen mitgeben
         #ZB: Anzahl der Farb-Stufen und so weiter...
@@ -60,10 +66,10 @@ def strobo(self,wait, r,g,b):
     led = light()
     while self.running:
         led.all(r,g,b)
-        time.sleep(wait)
+        time.sleep(Conf.OneSpeedSingleton)
         led.all(0,0,0)
         #led.allOff(False)
-        time.sleep(wait)
+        time.sleep(Conf.OneSpeedSingleton)
 
 #in Smooshig bestimmt auch seht schön
 def laufHorizontal(self,wait, r,g,b):
@@ -75,7 +81,7 @@ def laufHorizontal(self,wait, r,g,b):
                 led.setBottomLed(r,g,b)
             else:
                 led.setZeile(y,r,g,b)
-            time.sleep(wait)
+            time.sleep(Conf.OneSpeedSingleton)
             if y-1 == -1:
                 led.setBottomLed(0,0,0)
             else:
@@ -88,7 +94,7 @@ def laufVertikal(self,wait, r,g,b):
     while self.running:
         for x in range(len(Conf.OneLightmatrix)):
             led.setSpalte(x,r,g,b)
-            time.sleep(wait)
+            time.sleep(Conf.OneSpeedSingleton)
             if x-1 == -1:
                 led.setSpalte(len(Conf.OneLightmatrix)-1,0,0,0)
             else:

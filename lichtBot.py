@@ -12,6 +12,8 @@ from lib.userDatabaseLib import UserDatabase
 from lib.tempPlot import TempPlot
 import datetime as DT
 from lib.partyModeLib import PartyMode
+import lib.modiLib as ModiLib
+
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -31,7 +33,20 @@ reply_keyboard_admin = [['Nächster Request', 'Zeige alle User'],
                         ['Lösche User','Verlasse AdminMode']]
 reply_keyboard_adminRequest = [['Ja', 'Löschen']]
 reply_keyboard_quit = [['Abbrechen']]
-reply_keyboard_party = [['Farbwechsel horizontal','Verlasse PartyMode']]
+
+
+temp=[]
+reply_keyboard_party=[]
+i=0
+for v in ModiLib.tastertur.values():
+    temp.append(v)
+    i=i+1
+    if i % 3 == 0:
+        reply_keyboard_party.append(temp)
+        temp=[]
+reply_keyboard_party.append(temp)
+temp=['Verlasse PartyMode']
+reply_keyboard_party.append(temp)
 
 markup_login = ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True)
 markup_light = ReplyKeyboardMarkup(reply_keyboard_light_Abo, one_time_keyboard=True)
@@ -296,28 +311,49 @@ def switchToPartyModus(bot, update, user_data):
     else:
         update.message.reply_text('Sorry, du hast leider keine Rechte.')
 
-def changeColorHorizontal(bot, update, user_data):
- #   update.message.reply_text(
- #               'Hat leider noch eine bug.\n ',
- #               reply_markup=user_data['keyboard'])
- #   return user_data['status']
-
+#TODO  Alle Bot-Stati in solche Funktionen umschreiben/auslagern
+def selectPartyModi(bot, update, user_data):
+    textFromUser = update.message.text
     checkAthentifizierung(update,user_data)
     if user_data['isAlowed'] == 1:
-        if user_data['chatId'] != Conf.telegram['adminChatID']:
-                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das ChangeColorHorizontal an geschaltet.")
-        
-        
-        update.message.reply_text(
-                'Party... wooob!!!,\n '+
-                'Mit /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren.\n'+
-                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton),
+        funkName=None
+        #Suche nach FunktionsName ([1:] entfernt / am Anfang der Zeichenkette)
+        if textFromUser[1:] in ModiLib.tastertur or textFromUser[1:] in ModiLib.textbefehl:
+            funkName=textFromUser[1:]
+        #Suche über Button-Beschriftung
+        elif textFromUser in ModiLib.tastertur.values():
+            for key, value in ModiLib.tastertur.items():
+                if value == textFromUser:
+                    funkName=key
+        if funkName is None:
+            update.message.reply_text(
+                'Modus: "'+textFromUser+'" wurde leider nicht gefunden.\n'+
+                'Versuche es mal mit /help.\n',
                 reply_markup=user_data['keyboard'])
-        pm = PartyMode()
-        pm.regenbogenHorizontal()
-        
+        else:
+            if user_data['chatId'] != Conf.telegram['adminChatID']:
+                bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat das "+funkName+" an geschaltet.")
+            textOfSpeeds=''
+            #Suche Speedempfehlungen raus
+            if funkName in ModiLib.speedEmpfehlungen:
+                listOfSpeeds = ModiLib.speedEmpfehlungen.get(funkName)
+                if listOfSpeeds is not None:
+                    textOfSpeeds='Folgende Geschwindigkeiten werden empfohlen:\n'
+                    for speed in listOfSpeeds:
+                        textOfSpeeds=textOfSpeeds+'- /speed '+str(speed)+'\n'
+            pm = PartyMode()
+            #pm.startModi( 'funkName', wait=0.05,r=0,g=255,b=255)
+            pm.startModi(str(funkName), Conf.OneSpeedSingleton,0,255,255)
+            update.message.reply_text(
+                'Modus: "'+funkName+'"\n'+
+                'Party... wooob!!!,\n '+
+                'Mit /speed [duble] in Sekunden kannst du die Geschwindigkeit regulieren.\n'+
+                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton)+'\n'+
+                textOfSpeeds,
+                reply_markup=user_data['keyboard'])
+            
         return user_data['status']
-
+    
 def done(bot, update, user_data):
     if 'choice' in user_data:
         del user_data['choice']
@@ -405,15 +441,19 @@ def help(bot,update, user_data):
                 '- /party wechselt in den Partymodus ',
                 reply_markup=user_data['keyboard'])
         if user_data['status'] == PARTY:
+            text='\n Jetzt wird es erst spannend...\n'
+            for key,value in ModiLib.textbefehl.items():
+                text=text+'- /'+key+' '+value+'\n'
             
             update.message.reply_text(
                 'Nutze das Keyboard für Standard-Aktionen. \n\n'+
                 'Weitere Funktionen: \n'+
                 '- /help zeigt diesen Text an \n'+
-                '- /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren.'+
-                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton),
+                '- /speed [duble] in Sekunden kannst du die geschwindigkeit regulieren. '+
+                'Aktuelle Geschwindigkeit: '+str(Conf.OneSpeedSingleton)+'\n'+
                 '- /admin wechselt in die Userverwaltung \n' +
-                '- /exit verläst den Partymodus ',
+                '- /exit verläst den Partymodus \n' +
+                 str(text)+' ',
                 reply_markup=user_data['keyboard'])
     return user_data['status']
     
@@ -428,6 +468,43 @@ def main():
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
+    
+    #TODO: ModiLib.tastertur in conv_handler intigrieren
+    #for key,value in ModiLib.textbefehl.items():
+    #            text=text+'- /'+key+' '+value+'\n'
+    
+    partyList=[     RegexHandler('^Verlasse PartyMode$',
+                                 quitSpecialMode,
+                                 pass_user_data=True),
+                    CommandHandler('speed',
+                                   setSpeed,
+                                   pass_user_data=True,
+                                   pass_args=True),
+                    CommandHandler('admin',
+                                   switchToAdminModus,
+                                   pass_user_data=True),
+                    CommandHandler('exit',
+                                   quitSpecialMode,
+                                   pass_user_data=True),
+                    CommandHandler('help',
+                                   help,
+                                   pass_user_data=True),
+                    CommandHandler('rgb',
+                                   rgb,
+                                   pass_user_data=True,
+                                   pass_args=True)   
+                ]
+    for value in ModiLib.tastertur.values():
+               partyList.extend([RegexHandler('^'+str(value)+'$',
+                                   selectPartyModi,
+                                   pass_user_data=True)])
+    for key in ModiLib.textbefehl.keys():
+               partyList.extend([CommandHandler(str(key),
+                                   selectPartyModi,
+                                   pass_user_data=True)])
+    partyList.extend([MessageHandler(Filters.text,
+                                    help,
+                                    pass_user_data=True)])
     
     # Add conversation handler with the states CHOOSING, TYPING_CHOICE and TYPING_REPLY
     conv_handler = ConversationHandler(
@@ -490,33 +567,7 @@ def main():
                                     help,
                                     pass_user_data=True)
                     ],
-            PARTY:[ RegexHandler('^Farbwechsel horizontal$',
-                                 changeColorHorizontal,
-                                 pass_user_data=True),
-                    RegexHandler('^Verlasse PartyMode$',
-                                 quitSpecialMode,
-                                 pass_user_data=True),
-                    CommandHandler('speed',
-                                   setSpeed,
-                                   pass_user_data=True,
-                                   pass_args=True),
-                    CommandHandler('admin',
-                                   switchToAdminModus,
-                                   pass_user_data=True),
-                    CommandHandler('exit',
-                                   quitSpecialMode,
-                                   pass_user_data=True),
-                    CommandHandler('help',
-                                   help,
-                                   pass_user_data=True),
-                    CommandHandler('rgb',
-                                   rgb,
-                                   pass_user_data=True,
-                                   pass_args=True),
-                    MessageHandler(Filters.text,
-                                    help,
-                                    pass_user_data=True)
-                ],
+            PARTY:partyList,
             GETDAYS:[RegexHandler('^Abbrechen$$',
                                  exitAdminRequest,
                                  pass_user_data=True),
