@@ -21,8 +21,9 @@ class PartyMode:
     
     #def __init__(self):
         #Conf.OneThreadSingleton = "test"
-        
-        
+    tastertur = Modi.tastertur
+    textbefehl = Modi.textbefehl
+    
     def getSpeed(self):
         return Conf.OneSpeedSingleton
     
