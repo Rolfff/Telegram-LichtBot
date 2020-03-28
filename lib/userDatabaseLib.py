@@ -175,10 +175,9 @@ class UserDatabase:
             cursor.execute("SELECT chatID,firstname,lastname,alowToDatetime FROM "+Conf.sqlite['userTable']+" WHERE isAdmin = '1' or isAdmin = '0'")
             rows = cursor.fetchall()
             for row in rows:
-                print('chatID'+str(row[0])+'firstname'+str(row[1])+'lastname'+str(row[2])+ 'alowToDatetime'+str(row[3]))
-                user = {'chatID':row[0],'firstname':row[1],'lastname':row[2], 'alowToDatetime':row[3]}
+                #print('chatID'+str(row[0])+'firstname'+str(row[1])+'lastname'+str(row[2])+ 'alowToDatetime'+str(row[3]))
+                user = {'chatID':str(row[0]),'firstname':str(row[1]),'lastname':str(row[2]), 'alowToDatetime':str(row[3])}
                 if self.isAlowed(user['chatID']) == 1:
-                    print('hallo')
                     users.append(user)
         except Error as e:
             print(str(e)+" SQL-Query:"+str(sql))

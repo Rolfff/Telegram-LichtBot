@@ -21,9 +21,18 @@ textbefehl = {'nextRequest': 'Zeigt nächsten Request',
          'deleteUsers': 'Lösche User',
          'quit': 'Verlasse AdminMode'}
 
-def displayUsers(bot, update, user_data,markupList):
-    #todo
-    update.message.reply_text("Nicht implementiert",
+def displayUsers(bot, update, user_data, markupList):
+    userDB = UserDatabase()
+    userList = userDB.getAllUsers()
+    text = 'Nr. - Name bis Zugriff \n'
+    x = 1
+    #print(userList)
+    for user in userList:
+        text = text +''+str(x)+' - '+str(user['firstname'])+' '+str(user['lastname']) +' bis '+str(user['alowToDatetime'])[0:10]+' \n'
+        x = x+1
+        
+    update.message.reply_text("Hier die Liste aller aktiven User \n \n"
+                              +text,
         reply_markup=user_data['keyboard'])
     return user_data['status']
 
