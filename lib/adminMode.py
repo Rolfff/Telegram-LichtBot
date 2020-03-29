@@ -16,29 +16,31 @@ tastertur = {'nextRequest': 'nächster Request',
          'deleteUsers': 'Lösche User',
          'quit': 'Verlasse AdminMode'}
 #Funktionen Map{Funk-Name, Beschreiung in Help}
-textbefehl = {'nextRequest': 'Zeigt nächsten Request',
+textbefehl = {'nextRequest': 'Zeigt den nächsten User-Request an',
          'displayUsers': 'Zeigt alle User',
          'deleteUsers': 'Lösche User',
+         'help': 'Zeigt diesen Text an',
          'quit': 'Verlasse AdminMode'}
+#def default fungiert als Funktion die bei freien Texteingaben ausgeführt wird
 
+
+    
 def displayUsers(bot, update, user_data, markupList):
     userDB = UserDatabase()
-    userList = userDB.getAllUsers()
-    text = 'Nr. - Name bis Zugriff \n'
-    x = 1
-    #print(userList)
-    for user in userList:
-        text = text +''+str(x)+' - '+str(user['firstname'])+' '+str(user['lastname']) +' bis '+str(user['alowToDatetime'])[0:10]+' \n'
-        x = x+1
-        
+    text = userDB.userList()
     update.message.reply_text("Hier die Liste aller aktiven User \n \n"
-                              +text,
+                              +text[str(len(text))],
         reply_markup=user_data['keyboard'])
     return user_data['status']
 
 def deleteUsers(bot, update, user_data,markupList):
-    #todo: muss user auflisten zum auswählen
-    update.message.reply_text("Nicht implementiert",
+    #todo: muss weiteren Workflow schreiben
+    userDB = UserDatabase()
+    text = userDB.userList()
+    user_data['keyboard'] = markupList[Conf.OneModeListID['ADMINDELETE']]
+    user_data['status'] = Conf.OneModeListID['ADMINDELETE']
+    update.message.reply_text("Bitte wähle den zu löschenden User aus in dem du einen dessen Nummer schickst: \n \n"
+                              +text[str(len(text))],
         reply_markup=user_data['keyboard'])
     return user_data['status']
 
@@ -65,5 +67,20 @@ def nextRequest(bot, update, user_data, markupList):
         update.message.reply_text("No request.",
             reply_markup=user_data['keyboard'])
     return user_data['status']
+
+def help(bot, update, user_data, markupList):
+    text=''
+    for key,value in textbefehl.items():
+        text=text+'- /'+key+' '+value+'\n'
+            
+    update.message.reply_text(
+                'Nutze das Keyboard für Admin-Aktionen: \n'+
+                 str(text)+' ',
+                reply_markup=user_data['keyboard'])
+    return user_data['status']
+    
+
+def default(bot, update, user_data, markupList):
+    return help(bot, update, user_data, markupList)
 
 #TODO: Classenname zu String umwandeln

@@ -14,6 +14,7 @@ import datetime as DT
 from lib.partyModeLib import PartyMode
 import lib.modiLib as ModiLib
 import lib.adminMode as AdminMode
+import lib.adminModeDeleteUser as AdminModeDeleteUser
 
 
 # Enable logging
@@ -23,15 +24,16 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 #LOGIN = 0 , LIGHT = 1, ...
-LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS, PARTY = range(6)
+LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS, PARTY, ADMINDELETE = range(7)
 Conf.OneModeListID = {'LOGIN':LOGIN,
-                   'LIGHT':LIGHT,
-                   'ADMIN':ADMIN,
-                   'ADMINREQUEST':ADMINREQUEST,
-                   'GETDAYS':GETDAYS,
-                   'PARTY':PARTY}
+                'LIGHT':LIGHT,
+                'ADMIN':ADMIN,
+                'ADMINREQUEST':ADMINREQUEST,
+                'GETDAYS':GETDAYS,
+                'PARTY':PARTY,
+                'ADMINDELETE':ADMINDELETE}
 #Modi Klassennamen zu den Statusen
-modeList = [None,None,AdminMode,None,None,PartyMode]
+modeList = [None,None,AdminMode,None,None,PartyMode,AdminModeDeleteUser]
 
 reply_keyboard_login = [['Login', 'Bye',],
                         ['Sensor']]
@@ -76,12 +78,18 @@ def getMarkupList(user_data):
         reply_keyboard_light = reply_keyboard_light_quitAbo
     else:
         reply_keyboard_light = reply_keyboard_light_Abo
-    return {LOGIN:ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True),
+        
+    markup = {LOGIN:ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True),
             LIGHT:ReplyKeyboardMarkup(reply_keyboard_light, one_time_keyboard=True),
             ADMIN:ReplyKeyboardMarkup(buildKeyboard(AdminMode), one_time_keyboard=True),
             ADMINREQUEST:ReplyKeyboardMarkup(reply_keyboard_adminRequest, one_time_keyboard=True),
             GETDAYS:ReplyKeyboardMarkup(reply_keyboard_quit, one_time_keyboard=True),
             PARTY:ReplyKeyboardMarkup(reply_keyboard_party, one_time_keyboard=True)}
+    #GEgen none testen
+    for x in range(len(modeList)):
+        if modeList[x] is not None:
+            markup[x] = ReplyKeyboardMarkup(buildKeyboard(modeList[x]), one_time_keyboard=True)
+    return markup
 
 #TODO: Nach einander in neue Funktionen umschreiben
 markup_login = ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True)
@@ -315,16 +323,22 @@ def selectModeFunc(bot, update, user_data):
                     if value == textFromUser:
                         funkName=key
             if funkName is None:
-                update.message.reply_text(
-                    'Modus: "'+textFromUser+'" wurde leider nicht gefunden.\n'+
-                    'Versuche es mal mit /help.\n',
-                    reply_markup=user_data['keyboard'])
+                #if exist Fuction defoult?
+                try:
+                    funcRet = getattr(classs, 'default')(bot, update, user_data,getMarkupList(user_data))
+                    user_data['status'] = funcRet
+                except Error as e:
+                    print(str(e)+" Keine Funktion 'default' in "+str(classs)+" gefunden.")    
+                    update.message.reply_text(
+                        'Modus: "'+textFromUser+'" wurde leider nicht gefunden.\n'+
+                        'Versuche es mal mit /help.\n',
+                        reply_markup=user_data['keyboard'])
             else:
                 if user_data['chatId'] != Conf.telegram['adminChatID']:
                     bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat Funktion "+str(classs)+"."+funkName+" an geschaltet.")
                 
                 funcRet = getattr(classs, str(funkName))(bot, update, user_data,getMarkupList(user_data))
-                
+                user_data['status'] = funcRet
                 
     return user_data['status']
     
@@ -573,7 +587,7 @@ def main():
     for x in range(len(modeList)):
         
         #GEgen none und Partymode testen
-        if modeList[x] is not None and x != 5:
+        if modeList[x] is not None and x != PARTY:
             #print(str(x)+"="+str(modeList[x]))
             tempList=[]
             for value in modeList[x].tastertur.values():
@@ -584,6 +598,9 @@ def main():
                tempList.extend([CommandHandler(str(key),
                                    selectModeFunc,
                                    pass_user_data=True)])
+            tempList.extend([MessageHandler(Filters.text,
+                                    selectModeFunc,
+                                    pass_user_data=True)])
             autoStatesHandler[x]=tempList
     
     statess={

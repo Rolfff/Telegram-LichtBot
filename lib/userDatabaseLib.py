@@ -167,12 +167,16 @@ class UserDatabase:
             connection.close()
             return nextRequest
     
-    def getAllUsers(self):
+    def getAllUsers(self,chatID=None):
+        if chatID is None:
+            where = " isAdmin = '1' or isAdmin = '0'"
+        else:
+            where = " chatID = '"+chatID+"'"
         connection = sqlite3.connect(Conf.sqlite['pathUser'])
         cursor = connection.cursor()
         users = []
         try:
-            cursor.execute("SELECT chatID,firstname,lastname,alowToDatetime FROM "+Conf.sqlite['userTable']+" WHERE isAdmin = '1' or isAdmin = '0'")
+            cursor.execute("SELECT chatID,firstname,lastname,alowToDatetime FROM "+Conf.sqlite['userTable']+" WHERE "+where)
             rows = cursor.fetchall()
             for row in rows:
                 #print('chatID'+str(row[0])+'firstname'+str(row[1])+'lastname'+str(row[2])+ 'alowToDatetime'+str(row[3]))
@@ -187,7 +191,19 @@ class UserDatabase:
             connection.close()
             return users
         
-        
+    def userList(self):
+        userList = self.getAllUsers()
+        text = 'Nr. - Name bis Zugriff \n'
+        x = 1
+        idList = {}
+        #print(userList)
+        for user in userList:
+            text = text +''+str(x)+' - '+str(user['firstname'])+' '+str(user['lastname']) +' bis '+str(user['alowToDatetime'])[0:10]+' \n'
+            idList[str(x)] = str(user['chatID'])
+            x = x+1
+        idList[str(x)] = text
+        return idList
+
         
     
 def main():
