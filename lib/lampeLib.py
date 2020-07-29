@@ -118,6 +118,7 @@ class light:
             self.setZeile(y,r,g,b)
             if self.getWait(wait) > 0:
                 time.sleep(self.getWait(wait))
+#TODO: BottemLED ist ein Wait zu lange
         if self.getWait(wait) > 0:
             time.sleep(self.getWait(wait))
         self.setPixel(self.bottomled,r,g,b)

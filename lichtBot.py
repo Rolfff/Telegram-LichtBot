@@ -13,6 +13,8 @@ from lib.tempPlot import TempPlot
 import datetime as DT
 from lib.partyModeLib import PartyMode
 import lib.modiLib as ModiLib
+import lib.adminMode as AdminMode
+import lib.adminModeDeleteUser as AdminModeDeleteUser
 
 
 # Enable logging
@@ -21,7 +23,17 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS, PARTY = range(6)
+#LOGIN = 0 , LIGHT = 1, ...
+LOGIN, LIGHT, ADMIN, ADMINREQUEST, GETDAYS, PARTY, ADMINDELETE = range(7)
+Conf.OneModeListID = {'LOGIN':LOGIN,
+                'LIGHT':LIGHT,
+                'ADMIN':ADMIN,
+                'ADMINREQUEST':ADMINREQUEST,
+                'GETDAYS':GETDAYS,
+                'PARTY':PARTY,
+                'ADMINDELETE':ADMINDELETE}
+#Modi Klassennamen zu den Statusen
+modeList = [None,None,AdminMode,None,None,PartyMode,AdminModeDeleteUser]
 
 reply_keyboard_login = [['Login', 'Bye',],
                         ['Sensor']]
@@ -29,28 +41,60 @@ reply_keyboard_light_Abo = [['Licht an', 'Licht aus'],
                         ['Sensor','Abo','Logout']]
 reply_keyboard_light_quitAbo = [['Licht an', 'Licht aus'],
                         ['Sensor','quit Abo','Logout']]
-reply_keyboard_admin = [['Nächster Request', 'Zeige alle User'],
-                        ['Lösche User','Verlasse AdminMode']]
 reply_keyboard_adminRequest = [['Ja', 'Löschen']]
 reply_keyboard_quit = [['Abbrechen']]
 
 
-temp=[]
-reply_keyboard_party=[]
-i=0
-for v in ModiLib.tastertur.values():
-    temp.append(v)
-    i=i+1
-    if i % 3 == 0:
-        reply_keyboard_party.append(temp)
-        temp=[]
-reply_keyboard_party.append(temp)
+
+
+def buildKeyboard(classs):
+    temp=[]
+    reply_keyboard=[]
+    i=0
+    for v in classs.tastertur.values():
+        temp.append(v)
+        i=i+1
+        if i % 3 == 0:
+            reply_keyboard.append(temp)
+            temp=[]
+    reply_keyboard.append(temp)
+    return reply_keyboard
+
+def getMarkup(user_data):
+    if modeList[user_data['status']] is None:
+        print("Keine Klasse an Stelle "+ str(user_data['status']) +"gefunden")
+        return None
+    else:
+        reply_keyboard = buildKeyboard(modeList[user_data['status']])
+        return ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+
+#TODO in Partymode auslagern
+reply_keyboard_party = buildKeyboard(ModiLib)
 temp=['Verlasse PartyMode']
 reply_keyboard_party.append(temp)
 
+def getMarkupList(user_data):
+    if user_data['wetterAbo'] == 1:
+        reply_keyboard_light = reply_keyboard_light_quitAbo
+    else:
+        reply_keyboard_light = reply_keyboard_light_Abo
+        
+    markup = {LOGIN:ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True),
+            LIGHT:ReplyKeyboardMarkup(reply_keyboard_light, one_time_keyboard=True),
+            ADMIN:ReplyKeyboardMarkup(buildKeyboard(AdminMode), one_time_keyboard=True),
+            ADMINREQUEST:ReplyKeyboardMarkup(reply_keyboard_adminRequest, one_time_keyboard=True),
+            GETDAYS:ReplyKeyboardMarkup(reply_keyboard_quit, one_time_keyboard=True),
+            PARTY:ReplyKeyboardMarkup(reply_keyboard_party, one_time_keyboard=True)}
+    #GEgen none testen
+    for x in range(len(modeList)):
+        if modeList[x] is not None:
+            markup[x] = ReplyKeyboardMarkup(buildKeyboard(modeList[x]), one_time_keyboard=True)
+    return markup
+
+#TODO: Nach einander in neue Funktionen umschreiben
 markup_login = ReplyKeyboardMarkup(reply_keyboard_login, one_time_keyboard=True)
 markup_light = ReplyKeyboardMarkup(reply_keyboard_light_Abo, one_time_keyboard=True)
-markup_admin = ReplyKeyboardMarkup(reply_keyboard_admin, one_time_keyboard=True)
+markup_admin = ReplyKeyboardMarkup(buildKeyboard(AdminMode), one_time_keyboard=True)
 markup_adminRequest = ReplyKeyboardMarkup(reply_keyboard_adminRequest, one_time_keyboard=True)
 markup_quit = ReplyKeyboardMarkup(reply_keyboard_quit, one_time_keyboard=True)
 markup_party = ReplyKeyboardMarkup(reply_keyboard_party, one_time_keyboard=True)
@@ -68,7 +112,7 @@ def checkAthentifizierung(update,user_data):
     user_data['isAlowed'] = ret
     #print('ret'+str(ret))
     if ret == 0:
-        user_data['keyboard'] = markup_login
+        user_data['keyboard'] = getMarkupList(user_data)[LOGIN]
         user_data['status'] = LOGIN
         update.message.reply_text(
             'Ohh... Deine Berechtigung ist abgelaufen.',
@@ -76,10 +120,7 @@ def checkAthentifizierung(update,user_data):
         return LOGIN
     else:
         if ret == 1 and user_data['status'] == LOGIN:
-            user_data['keyboard'] = markup_light
-            if user_data['wetterAbo'] == 1:
-                user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
-
+            user_data['keyboard'] = getMarkupList(user_data)[LIGHT]
             user_data['status'] = LIGHT
         #else:
             #nichts
@@ -97,9 +138,7 @@ def inilasizeChatData(message,user_data):
     user_data['userRequest'] = None
     if userDB.existUser(user_data['chatId']):
         user_data['wetterAbo'] = userDB.getWetterAbo(user_data['chatId'])
-        if user_data['wetterAbo'] == 1:
-            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
-
+        getMarkupList(user_data)[LIGHT]
     else :
         user_data['wetterAbo'] = 0
     print('chatID:'+user_data['chatId']+' Username: '+user_data['firstname']+' '+user_data['lastname']);
@@ -111,13 +150,12 @@ def switchWetterAbo(bot, update, user_data):
         if user_data['wetterAbo'] == 1:
             userDB.updateWetterAbo(user_data['chatId'],0)
             user_data['wetterAbo'] = 0
-            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_Abo, one_time_keyboard=True)
             text='OK. Du bekommst keine Meldungen mehr, wenn sich die Temperaturen unterscheiden.'
         else:
             userDB.updateWetterAbo(user_data['chatId'],1)
             user_data['wetterAbo'] = 1
-            user_data['keyboard'] = ReplyKeyboardMarkup(reply_keyboard_light_quitAbo, one_time_keyboard=True)
             text='Ich melde mich bei dir sobald es draußen wärmer oder kälter ist als im Zimmer.'
+        user_data['keyboard'] = getMarkupList(user_data)[LIGHT]
     else:
         text='Du hast leider keine Berechtiungen für diese Funktion.'
     update.message.reply_text(
@@ -159,7 +197,7 @@ def start(bot, update, user_data):
 def getPasswort(bot, update, user_data):
     update.message.reply_text(
         "Bitte gib dein Passwort ein",
-            reply_markup=markup_login)
+            reply_markup=getMarkupList(user_data)[LOGIN])
     return LOGIN
 
 def checkPasswort(bot, update, user_data):
@@ -169,11 +207,11 @@ def checkPasswort(bot, update, user_data):
         if user_data['chatId'] == Conf.telegram['adminChatID']:
             userDB = UserDatabase()
             userDB.insertNewUser(user_data,0)
-            user_data['keyboard'] = markup_light
+            user_data['keyboard'] = getMarkupList(user_data)[LIGHT]
             user_data['status'] = LIGHT
             update.message.reply_text(
                 'Du kannst jetzt das Licht steuern.',
-                reply_markup=markup_light)
+                reply_markup=user_data['keyboard'])
             return LIGHT
         else:
             #kein Admin
@@ -184,12 +222,12 @@ def checkPasswort(bot, update, user_data):
             bot.send_message(user_data['chatId'],text='Der Admin wurde benachrichtigt.')
             update.message.reply_text(
                 'Falls der Admin nicht schnell genug reagiert, gib das Passwort bitte noch einmal ein um den Admin an die Freigebe zu erinnern.',
-                reply_markup=markup_login)
+                reply_markup=getMarkupList(user_data)[LOGIN])
             return LOGIN
     else:
         update.message.reply_text(
             'Das Passwort ist falsch.',
-            reply_markup=markup_login)
+            reply_markup=getMarkupList(user_data)[LOGIN])
         return LOGIN
     
 def checkRechte(bot, update, user_data):
@@ -200,7 +238,7 @@ def checkRechte(bot, update, user_data):
 
 def switchToAdminModus(bot, update, user_data):
     if user_data['chatId'] == Conf.telegram['adminChatID']:
-        user_data['keyboard'] = markup_admin
+        user_data['keyboard'] = getMarkupList(user_data)[ADMIN]
         user_data['status'] = ADMIN
         update.message.reply_text("-->ADMINMODE<--",
                                   reply_markup=user_data['keyboard'])
@@ -208,25 +246,10 @@ def switchToAdminModus(bot, update, user_data):
     else:
         update.message.reply_text('Sorry, du hast leider keine Admin-Rechte.')
 
-def nextRequest(bot, update, user_data):
-    userDB = UserDatabase()
-    nextRequest = userDB.getNextRequest()
-    if nextRequest['chatID'] is not None:
-        user_data['keyboard'] = markup_adminRequest
-        user_data['status'] = ADMINREQUEST
-        user_data['userRequest'] = nextRequest
-        update.message.reply_text("Request "+str(nextRequest['chatID'])+": "+str(nextRequest['firstname'])+" "+str(nextRequest['lastname']),
-            reply_markup=user_data['keyboard'])
-    else:
-        user_data['keyboard'] = markup_admin
-        user_data['status'] = ADMIN
-        user_data['userRequest'] = nextRequest
-        update.message.reply_text("No request.",
-            reply_markup=user_data['keyboard'])
-    return user_data['status']
+
 
 def allowUser(bot, update, user_data):
-    user_data['keyboard'] = markup_quit
+    user_data['keyboard'] = getMarkupList(user_data)[GETDAYS]
     user_data['status'] = GETDAYS
     nextRequest = user_data['userRequest']
     update.message.reply_text("Wieviel Tage soll "+str(nextRequest['firstname'])+" zugriff auf die Lampe haben? Bitte gebe eine natürliche Zahl ein oder /quit .",
@@ -236,7 +259,7 @@ def allowUser(bot, update, user_data):
 def updateUser(bot, update, user_data):
     text = update.message.text
     print(str(text))
-    user_data['keyboard'] = markup_admin
+    user_data['keyboard'] = getMarkupList(user_data)[ADMIN]
     user_data['status'] = ADMIN
     nextRequest = user_data['userRequest']
     try:
@@ -259,7 +282,7 @@ def updateUser(bot, update, user_data):
         return user_data['status']
 
 def deletUser(bot, update, user_data):
-    user_data['keyboard'] = markup_admin
+    user_data['keyboard'] = getMarkupList(user_data)[ADMIN]
     user_data['status'] = ADMIN
     nextRequest = user_data['userRequest']
     userDB = UserDatabase()
@@ -271,26 +294,56 @@ def deletUser(bot, update, user_data):
 
 def exitAdminRequest(bot, update, user_data):
     user_data['userRequest'] = None
-    user_data['keyboard'] = markup_admin
+    user_data['keyboard'] = getMarkupList(user_data)[ADMIN]
     user_data['status'] = ADMIN
     update.message.reply_text("Request abgebrochen",
         reply_markup=user_data['keyboard'])
     return user_data['status']
     
-def displayUsers(bot, update, user_data):
-    #todo
-    update.message.reply_text("Nicht implementiert",
-        reply_markup=user_data['keyboard'])
-    return user_data['status']
 
-def deleteUsers(bot, update, user_data):
-    #todo: muss user auflisten zum auswählen
-    update.message.reply_text("Nicht implementiert",
-        reply_markup=user_data['keyboard'])
+
+def selectModeFunc(bot, update, user_data):
+    if modeList[user_data['status']] is None:
+        update.message.reply_text(
+                'Interner Error: Keine Klasse gefunden in modeList an Stelle "'+str(user_data['status'])+'".\n',
+                reply_markup=user_data['keyboard'])
+    else:
+        classs = modeList[user_data['status']]
+        
+        textFromUser = update.message.text
+        checkAthentifizierung(update,user_data)
+        if user_data['isAlowed'] == 1:
+            funkName=None
+            #Suche nach FunktionsName ([1:] entfernt / am Anfang der Zeichenkette)
+            if textFromUser[1:] in classs.tastertur or textFromUser[1:] in classs.textbefehl:
+                funkName=textFromUser[1:]
+            #Suche über Button-Beschriftung
+            elif textFromUser in classs.tastertur.values():
+                for key, value in classs.tastertur.items():
+                    if value == textFromUser:
+                        funkName=key
+            if funkName is None:
+                #if exist Fuction defoult?
+                try:
+                    funcRet = getattr(classs, 'default')(bot, update, user_data,getMarkupList(user_data))
+                    user_data['status'] = funcRet
+                except Error as e:
+                    print(str(e)+" Keine Funktion 'default' in "+str(classs)+" gefunden.")    
+                    update.message.reply_text(
+                        'Modus: "'+textFromUser+'" wurde leider nicht gefunden.\n'+
+                        'Versuche es mal mit /help.\n',
+                        reply_markup=user_data['keyboard'])
+            else:
+                if user_data['chatId'] != Conf.telegram['adminChatID']:
+                    bot.send_message(Conf.telegram['adminChatID'],text=user_data['firstname']+" hat Funktion "+str(classs)+"."+funkName+" an geschaltet.")
+                
+                funcRet = getattr(classs, str(funkName))(bot, update, user_data,getMarkupList(user_data))
+                user_data['status'] = funcRet
+                
     return user_data['status']
     
 def quitSpecialMode(bot, update, user_data):
-    user_data['keyboard'] = markup_light
+    user_data['keyboard'] = getMarkupList(user_data)[LIGHT]
     if user_data['status'] == PARTY:
         update.message.reply_text("EXIT --PARTYMODE--",
             reply_markup=user_data['keyboard'])
@@ -303,7 +356,7 @@ def quitSpecialMode(bot, update, user_data):
 def switchToPartyModus(bot, update, user_data):
     checkAthentifizierung(update,user_data)
     if user_data['isAlowed'] == 1:
-        user_data['keyboard'] = markup_party
+        user_data['keyboard'] = getMarkupList(user_data)[PARTY]
         user_data['status'] = PARTY
         update.message.reply_text("-->PARTYMODE<--",
                                   reply_markup=user_data['keyboard'])
@@ -453,6 +506,7 @@ def lightOff(bot, update, user_data):
         return user_data['status']
     
 def help(bot,update, user_data):
+    #TODo: In einzelne Modis auslagern
     checkAthentifizierung(update,user_data)
     if user_data['isAlowed'] == 1:
         if user_data['status'] == LIGHT:
@@ -529,17 +583,27 @@ def main():
     partyList.extend([MessageHandler(Filters.text,
                                     help,
                                     pass_user_data=True)])
+    autoStatesHandler={}
+    for x in range(len(modeList)):
+        
+        #GEgen none und Partymode testen
+        if modeList[x] is not None and x != PARTY:
+            #print(str(x)+"="+str(modeList[x]))
+            tempList=[]
+            for value in modeList[x].tastertur.values():
+               tempList.extend([RegexHandler('^'+str(value)+'$',
+                                   selectModeFunc,
+                                   pass_user_data=True)])
+            for key in modeList[x].textbefehl.keys():
+               tempList.extend([CommandHandler(str(key),
+                                   selectModeFunc,
+                                   pass_user_data=True)])
+            tempList.extend([MessageHandler(Filters.text,
+                                    selectModeFunc,
+                                    pass_user_data=True)])
+            autoStatesHandler[x]=tempList
     
-    # Add conversation handler with the states CHOOSING, TYPING_CHOICE and TYPING_REPLY
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start',
-                                     start,
-                                     pass_user_data=True),
-                      MessageHandler(Filters.text,
-                                    start,
-                                    pass_user_data=True)
-                      ],
-        states={
+    statess={
             LOGIN: [RegexHandler('^Login$',
                                  getPasswort,
                                  pass_user_data=True),
@@ -612,20 +676,19 @@ def main():
                                  exitAdminRequest,
                                  pass_user_data=True)
                     ],
-            ADMIN: [RegexHandler('^Nächster Request$',
-                                 nextRequest,
-                                 pass_user_data=True),
-                    RegexHandler('^Zeige alle User$',
-                                 displayUsers,
-                                 pass_user_data=True),
-                    RegexHandler('^Lösche User$',
-                                 deleteUsers,
-                                 pass_user_data=True),
-                    RegexHandler('^Verlasse AdminMode$',
-                                 quitSpecialMode,
-                                 pass_user_data=True)
-                           ],
-        },
+        }
+    #print(autoStatesHandler)
+    statess.update(autoStatesHandler)
+    # Add conversation handler with the states CHOOSING, TYPING_CHOICE and TYPING_REPLY
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('start',
+                                     start,
+                                     pass_user_data=True),
+                      MessageHandler(Filters.text,
+                                    start,
+                                    pass_user_data=True)
+                      ],
+        states = statess,
         fallbacks=[RegexHandler('^Logout$', done, pass_user_data=True)]
     )
 
