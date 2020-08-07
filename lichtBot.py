@@ -11,8 +11,8 @@ from lib.tempDatabaseLib import TempDatabase
 from lib.userDatabaseLib import UserDatabase
 from lib.tempPlot import TempPlot
 import datetime as DT
-from lib.partyModeLib import PartyMode
-import lib.modiPartyLib as ModiLib
+from lib.partyModeThread import PartyMode
+import lib.partyMode as ModiLib
 import lib.adminMode as AdminMode
 import lib.adminModeDeleteUser as AdminModeDeleteUser
 

@@ -6,8 +6,8 @@ def load_src(name, fpath):
  
 load_src("conf", "../conf.py")
 import conf as Conf
-load_src("modiPartyLib", "modiPartyLib.py")
-import modiPartyLib as Modi
+load_src("partyMode", "partyMode.py")
+import partyMode as Modi
 load_src("lampeLib", "lampeLib.py")
 from lampeLib import light
 import logging
