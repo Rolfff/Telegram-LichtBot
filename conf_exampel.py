@@ -7,8 +7,8 @@ post = {'url' : 'http://???.de/Temp-Controller.php',
 #Schnittstelle zum Deutschen Wetterdiesnst. Einstellung für Messstation Darmstadt am Woog
 dwd = {'url' : 'https://opendata.dwd.de/weather/weather_reports/poi/L886_-BEOB.csv',
        #Zeilenname für Temperatur
-        'tempKey' : 'temperature_at_5_cm_above_ground',
-       #Zeilenname für Luftfeuchtigkeit
+        'tempKey' : 'dry_bulb_temperature_at_2_meter_above_ground', #temperature_at_5_cm_above_ground
+        #Zeilenname für Luftfeuchtigkeit
         'humidityKey' : 'relative_humidity'}
 
 #Locale Datenbank für kurzfristige Wetteraufzeichnung und Usermanagement
