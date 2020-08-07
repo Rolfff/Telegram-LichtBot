@@ -12,7 +12,7 @@ from lib.userDatabaseLib import UserDatabase
 from lib.tempPlot import TempPlot
 import datetime as DT
 from lib.partyModeLib import PartyMode
-import lib.modiLib as ModiLib
+import lib.modiPartyLib as ModiLib
 import lib.adminMode as AdminMode
 import lib.adminModeDeleteUser as AdminModeDeleteUser
 
