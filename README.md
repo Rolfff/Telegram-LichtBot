@@ -59,3 +59,5 @@ siehe auch Quelle [2]:
 > sudo pip3 install -U numpy
 
 > sudo apt-get install libatlas-base-dev
+
+> sudo pip3 install PyMySQL
