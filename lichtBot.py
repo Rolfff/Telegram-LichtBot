@@ -162,14 +162,44 @@ def switchWetterAbo(bot, update, user_data):
         text,
         reply_markup=user_data['keyboard'])
     return user_data['status']
+
+def getSensorDays(bot,update,user_data,args):
+    text = update.message.text
     
-def getSensor(bot,update,user_data):
+    try:
+        days = int(args[0])
+        getSensor(bot,update,user_data,days)
+        
+    except ValueError as e:
+        update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
+            reply_markup=user_data['keyboard'])
+        return user_data['status']
+    except Exception as e:
+        update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
+            reply_markup=user_data['keyboard'])
+        return user_data['status']
+   
+    
+def getSensor(bot,update,user_data,days=Conf.tempExport['days']):
     checkAthentifizierung(update,user_data)
     tmpDB = TempDatabase()
     werte = tmpDB.getValue()
+    maxSavedDaysInDB = Conf.sqlite['deleteAfterWeeks']*7
+    if(days > maxSavedDaysInDB):
+        bot.send_message(chat_id=user_data['chatId'], 
+                  text='In der Datenbank sind nur '+str(maxSavedDaysInDB)+' Tage verfügbar.'
+                  )
+        days = maxSavedDaysInDB
+    if(days <= 0):
+        days = Conf.tempExport['days']
+        bot.send_message(chat_id=user_data['chatId'], 
+                  text='Weniger als einen Tag geht leider nicht.\n Ich bin großzügig und gebe dir '+str(days)+' Tage.'
+                  )
+        
+    
     try:
         plot = TempPlot()
-        plot.plot(tmpDB,Conf.tempExport['days'])
+        plot.plot(tmpDB,days)
     
         bot.send_photo(chat_id=user_data['chatId'], photo=open(Conf.tempExport['file'], 'rb'))
     except Exception as e:
@@ -178,7 +208,7 @@ def getSensor(bot,update,user_data):
                   )
     finally:
         update.message.reply_text(
-            'Werte: \n Time:'+str(werte['datetime'])+'\n Temperatur (blau):'+str(werte['temp'])+' Grad \n rel. Luftfeuchtigkeit (Orange):'+str(werte['hum']) +'%\n Außentemperatur (Grün):'+str(werte['dwdtemp'])+' Grad \n rel. Luftfeuchtigkeit außen (Rot):'+str(werte['dwdhum']+'%'),
+            'Werte: \n Time:'+str(werte['datetime'])+'\n Temperatur (blau):'+str(werte['temp'])+' Grad \n rel. Luftfeuchtigkeit (Orange):'+str(werte['hum']) +'%\n Außentemperatur (Grün):'+str(werte['dwdtemp'])+' Grad \n rel. Luftfeuchtigkeit außen (Rot):'+str(werte['dwdhum'])+'%',
             reply_markup=user_data['keyboard'])
     return user_data['status']
 
@@ -515,6 +545,7 @@ def help(bot,update, user_data):
                 'Weitere Funktionen: \n'+
                 '- /help zeigt diesen Text an \n'+
                 '- /rgb 0-255 0-255 0-255 färbt Licht buntisch \n'+
+                '- /sensor 1-'+str(Conf.sqlite['deleteAfterWeeks']*7)+' Zeigt Sensordaten für x Tage an \n'+
                 '- /admin wechselt in die Userverwaltung \n' +
                 '- /party wechselt in den Partymodus ',
                 reply_markup=user_data['keyboard'])
@@ -651,6 +682,10 @@ def main():
                     CommandHandler('party',
                                    switchToPartyModus,
                                    pass_user_data=True),
+                    CommandHandler('sensor',
+                                   getSensorDays,
+                                   pass_user_data=True,
+                                   pass_args=True),
                     MessageHandler(Filters.text,
                                     help,
                                     pass_user_data=True)
