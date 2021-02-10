@@ -178,7 +178,7 @@ def getSensor(bot,update,user_data):
                   )
     finally:
         update.message.reply_text(
-            'Werte: Time:'+str(werte['datetime'])+' Temp:'+str(werte['temp'])+' Hum:'+str(werte['hum']) +' DWD_Temp:'+str(werte['dwdtemp'])+' DWD_Hum:'+str(werte['dwdhum']),
+            'Werte: \n Time:'+str(werte['datetime'])+'\n Temperatur (blau):'+str(werte['temp'])+' Grad \n rel. Luftfeuchtigkeit (Orange):'+str(werte['hum']) +'%\n Außentemperatur (Grün):'+str(werte['dwdtemp'])+' Grad \n rel. Luftfeuchtigkeit außen (Rot):'+str(werte['dwdhum']+'%'),
             reply_markup=user_data['keyboard'])
     return user_data['status']
 
