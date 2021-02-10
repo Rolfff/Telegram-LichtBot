@@ -91,7 +91,7 @@ class TempDatabase:
             for row in rows:
                 values.append({"datetime":row[0],"temp":row[1],"hum":row[2],"dwdtemp":row[3],"dwdhum":row[4]})
                 
-                
+#            print(str(len(rows))+" SQL-Query:"+str("SELECT * FROM "+Conf.sqlite['tempTable']+" WHERE datetime > '"+str(day_ago)+"' ORDER BY datetime ASC ;"))
         except Error as e:
             print(str(e)+" SQL-Query:"+str(sql))
         finally:
