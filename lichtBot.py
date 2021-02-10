@@ -9,7 +9,7 @@ import logging
 import conf as Conf
 from lib.tempDatabaseLib import TempDatabase
 from lib.userDatabaseLib import UserDatabase
-from lib.tempPlot import TempPlot
+from lib.tempPlotLib import TempPlot
 import datetime as DT
 from lib.partyModeThread import PartyMode
 import lib.partyMode as ModiLib
