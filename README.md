@@ -27,8 +27,10 @@ siehe auch Quelle [2]:
 - BootBot.py erklären, Fals stromausfällt PI bot bootet
 - Kronjob Temeratur aufziechnen dokumentieren
 - Partymodus feritg progrmmieren Thread-Problem lösen
+  - Lieber in [LedFx](https://ledfx.readthedocs.io/en/master/) intigrieren
 - Repositorys aufräumen, bzw struckur reinbringen. 
 - ledLib.py und lampeLib.py in Lib-Ornder verschieben
+- Integration von [WLED](https://kno.wled.ge/)
 
 
 ## Quellen:
@@ -60,3 +62,5 @@ siehe auch Quelle [2]:
 > sudo apt-get install libatlas-base-dev
 
 > sudo pip3 install PyMySQL
+
+> sudo pip3 install requests

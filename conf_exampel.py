@@ -43,7 +43,8 @@ telegram = {'token' : '???',
 tempExport = {'file':'/home/pi/Dokumente/images/lastPic.png',
               #Wieviele Tage geplotet werden sollen
               'days' : 1}
-
+#WLED https://kno.wled.ge/
+wled = {'ip':None}
 
 #Not nice, but work ;(
 OneSpeedSingleton = 0.1

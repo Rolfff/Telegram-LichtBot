@@ -15,6 +15,7 @@ from lib.partyModeThread import PartyMode
 import lib.partyMode as ModiLib
 import lib.adminMode as AdminMode
 import lib.adminModeDeleteUser as AdminModeDeleteUser
+import wledpy.wled as wled
 
 
 # Enable logging
@@ -44,7 +45,7 @@ reply_keyboard_light_quitAbo = [['Licht an', 'Licht aus'],
 reply_keyboard_adminRequest = [['Ja', 'Löschen']]
 reply_keyboard_quit = [['Abbrechen']]
 
-
+schreibtisch = wled.Wled(Conf.wled['ip'])
 
 
 def buildKeyboard(classs):
@@ -455,6 +456,8 @@ def lightOn(bot, update, user_data):
             'Es werde Licht...',
             reply_markup=user_data['keyboard'])
         licht.on()
+        if Conf.wled['ip'] != None:
+            schreibtisch.turn_on()
         return user_data['status']
     
 def setSpeed(bot, update, user_data, args):
@@ -515,6 +518,8 @@ def rgb(bot, update, user_data, args):
                 'Es werde Rot:'+args[0]+' Grün:'+args[1]+' Blau:'+args[2]+' ...',
                 reply_markup=user_data['keyboard'])
             licht.on(rot,grün,blau)
+            if Conf.wled['ip'] != None:
+                schreibtisch.set_color((rot,grün,blau))
         except ValueError as e:
             update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
                 reply_markup=user_data['keyboard'])
@@ -533,6 +538,8 @@ def lightOff(bot, update, user_data):
             'Licht aus.',
             reply_markup=user_data['keyboard'])
         licht.off()
+        if Conf.wled['ip'] != None:
+            schreibtisch.turn_off()
         return user_data['status']
     
 def help(bot,update, user_data):

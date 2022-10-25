@@ -84,7 +84,8 @@ def main():
     tmpDB = TempDatabase()
     db = TempPlot()
     try:
-        db.plot(tmpDB,Conf.tempExport['days'])
+        #db.plot(tmpDB,Conf.tempExport['days'])
+        db.plot(tmpDB,14)
     except Exception as e:
         print('Error: '+str(e))
     
