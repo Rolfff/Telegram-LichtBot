@@ -99,8 +99,8 @@ class Wled():
         state = {"on": False}
         response = self.set_state(state)
         response_json = json.loads(response.text)
-        self._state = response_json["state"]["on"]
-
+        self._state = response_json["success"]
+        
         if self._state == False:
             return True
         else:
@@ -111,7 +111,7 @@ class Wled():
         state = {"on": True}
         response = self.set_state(state)
         response_json = json.loads(response.text)
-        self._state = response_json["state"]["on"]
+        self._state = response_json["success"]
 
         if self._state == True:
             return True
@@ -289,4 +289,8 @@ class Wled():
     @property
     def state(self):
         return self._state
+    
+    @state.setter
+    def state(self, eff):
+        self._state = eff
     

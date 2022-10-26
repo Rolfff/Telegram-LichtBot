@@ -455,9 +455,10 @@ def lightOn(bot, update, user_data):
         update.message.reply_text(
             'Es werde Licht...',
             reply_markup=user_data['keyboard'])
-        licht.on()
         if Conf.wled['ip'] != None:
             schreibtisch.turn_on()
+            schreibtisch.set_color((255,255,255))
+        licht.on()
         return user_data['status']
     
 def setSpeed(bot, update, user_data, args):
@@ -517,9 +518,9 @@ def rgb(bot, update, user_data, args):
             update.message.reply_text(
                 'Es werde Rot:'+args[0]+' Grün:'+args[1]+' Blau:'+args[2]+' ...',
                 reply_markup=user_data['keyboard'])
-            licht.on(rot,grün,blau)
             if Conf.wled['ip'] != None:
                 schreibtisch.set_color((rot,grün,blau))
+            licht.on(rot,grün,blau)
         except ValueError as e:
             update.message.reply_text("Error "+str(e)+" Bitte versuche es nochmal.",
                 reply_markup=user_data['keyboard'])
@@ -537,9 +538,9 @@ def lightOff(bot, update, user_data):
         update.message.reply_text(
             'Licht aus.',
             reply_markup=user_data['keyboard'])
-        licht.off()
         if Conf.wled['ip'] != None:
             schreibtisch.turn_off()
+        licht.off()
         return user_data['status']
     
 def help(bot,update, user_data):
