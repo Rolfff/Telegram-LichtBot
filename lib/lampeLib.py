@@ -92,8 +92,8 @@ class light:
     
     def setPixel(self,pixel,r = 0,g = 0,b = 0):
         
-        pixel.set(self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))
-        self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))  # Set the RGB color (0-255) of pixel i.
+        pixel.set(self.betrwRGB(r),self.betrwRGB(b),self.betrwRGB(g))
+        self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(b),self.betrwRGB(g))  # Set the RGB color (0-255) of pixel i.
         # Now make sure to call show() to update the pixels with the colors set above!
         self.pixels.show()
     
@@ -126,17 +126,17 @@ class light:
     def setZeile(self,zeilenNr,r=255,g=255,b=255):
         for x in range(len(self.lightmatrix)):
             pixel = self.lightmatrix[x][zeilenNr]
-            pixel.set(self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))
+            pixel.set(self.betrwRGB(r),self.betrwRGB(b),self.betrwRGB(g))
             #print(pixel)
-            self.pixels.set_pixel_rgb(int(pixel.id), self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))  # Set the RGB color (0-255) of pixel i.
+            self.pixels.set_pixel_rgb(int(pixel.id), self.betrwRGB(r),self.betrwRGB(b),self.betrwRGB(g))  # Set the RGB color (0-255) of pixel i.
         # Now make sure to call show() to update the pixels with the colors set above!
         self.pixels.show()
         
     def setSpalte(self,spaltenNr,r=255,g=255,b=255):
         for y in range(len(self.lightmatrix[spaltenNr])):
             pixel = self.lightmatrix[spaltenNr][y]
-            pixel.set(self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))
-            self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))  # Set the RGB color (0-255) of pixel i.
+            pixel.set(self.betrwRGB(r),self.betrwRGB(b),self.betrwRGB(g))
+            self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(b),self.betrwRGB(g))  # Set the RGB color (0-255) of pixel i.
         # Now make sure to call show() to update the pixels with the colors set above!
         self.pixels.show()
             
@@ -163,8 +163,8 @@ class light:
             
             pixel = self.lightlist[z]
             #print(pixel.id)
-            pixel.set(self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))
-            self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(g),self.betrwRGB(b))  # Set the RGB color (0-255) of pixel i.
+            pixel.set(self.betrwRGB(r),self.betrwRGB(b),self.betrwRGB(g))
+            self.pixels.set_pixel_rgb(pixel.id, self.betrwRGB(r),self.betrwRGB(b),self.betrwRGB(g))  # Set the RGB color (0-255) of pixel i.
         # Now make sure to call show() to update the pixels with the colors set above!
         self.pixels.show()
         
