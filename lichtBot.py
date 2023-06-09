@@ -208,9 +208,14 @@ def getSensor(bot,update,user_data,days=Conf.tempExport['days']):
                   text='Error: '+str(e) 
                   )
     finally:
-        update.message.reply_text(
-            'Werte: \n Time:'+str(werte['datetime'])+'\n Temperatur (blau):'+str(werte['temp'])+' Grad \n rel. Luftfeuchtigkeit (Orange):'+str(werte['hum']) +'%\n Außentemperatur (Grün):'+str(werte['dwdtemp'])+' Grad \n rel. Luftfeuchtigkeit außen (Rot):'+str(werte['dwdhum'])+'%',
-            reply_markup=user_data['keyboard'])
+        if werte == None:
+            update.message.reply_text(
+                'Keine Werte in der Datenbank gefunden.',
+                reply_markup=user_data['keyboard'])
+        else:
+            update.message.reply_text(
+                'Werte: \n Time:'+str(werte['datetime'])+'\n Temperatur (blau):'+str(werte['temp'])+' Grad \n rel. Luftfeuchtigkeit (Orange):'+str(werte['hum']) +'%\n Außentemperatur (Grün):'+str(werte['dwdtemp'])+' Grad \n rel. Luftfeuchtigkeit außen (Rot):'+str(werte['dwdhum'])+'%',
+                reply_markup=user_data['keyboard'])
     return user_data['status']
 
 def start(bot, update, user_data):

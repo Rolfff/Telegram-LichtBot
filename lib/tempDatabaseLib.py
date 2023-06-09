@@ -61,6 +61,7 @@ class TempDatabase:
         self.execute(sql)
         
     def getValue(self):
+        ret = None
         connection = sqlite3.connect(Conf.sqlite['pathTemp'])
         cursor = connection.cursor()
         try:
@@ -72,12 +73,13 @@ class TempDatabase:
                 hum = row[2]
                 dwdtem = row[3]
                 dwdhum = row[4]
-                
+                ret = {"datetime":date,"temp":tem,"hum":hum,"dwdtemp":dwdtem,"dwdhum":dwdhum}
         except Error as e:
             print(str(e)+" SQL-Query:"+str(sql))
+            
         finally:
             connection.close()
-        return {"datetime":date,"temp":tem,"hum":hum,"dwdtemp":dwdtem,"dwdhum":dwdhum}
+        return ret
     
     def getValues(self,overDays):
         values = []
