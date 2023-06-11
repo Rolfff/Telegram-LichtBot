@@ -7,18 +7,33 @@ def load_src(name, fpath):
 load_src("conf", "../conf.py")
 import conf as Conf
 import csv
-from urllib.request import urlopen
+import requests
 import codecs
 
 
 class DWDData:
     
     def getValues(self):
-        response = urlopen(Conf.dwd['url'])
-        reader = csv.DictReader(codecs.iterdecode(response, 'utf-8'),delimiter=';')
-        next(reader)
-        next(reader)
-        return next(reader)
+        
+        response = requests.get(Conf.dwd['url'])
+        rows = response.content.decode('utf-8').split('\n')
+        i = 0
+        ret = dict()
+        rowHeader = None
+        
+        for row in rows:
+            rowList = row.split(';')
+            
+            if i == 0:
+                rowHeader = rowList
+            elif i == 3:
+                for x in range(len(rowHeader)):
+                    ret[rowHeader[x]] = rowList[x]
+                break
+            i += 1
+        #print(str(ret))
+        return ret
+        
         
         
 
