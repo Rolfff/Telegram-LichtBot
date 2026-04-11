@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
+import sys
+import os
+import board
+import adafruit_dht
 import requests
-import Adafruit_DHT
 import conf as Conf
 from lib.tempDatabaseLib import TempDatabase
 from lib.userDatabaseLib import UserDatabase
 from lib.dwdDataLib import DWDData
 import telegram
 
-sensor = Adafruit_DHT.DHT11
-humidity, temperature = Adafruit_DHT.read_retry(sensor, Conf.pin['tempSen'])
+# Konvertiere Pin-Nummer zu Board Pin
+pin = getattr(board, f"D{Conf.pin['tempSen']}")
+sensor = adafruit_dht.DHT11(pin)
+
+try:
+    temperature = sensor.temperature
+    humidity = sensor.humidity
+except RuntimeError as error:
+    # Errors happen fairly often with DHT sensors, just try again
+    print(f"Runtime error: {error.args[0]}")
+    temperature, humidity = None, None
 
 db = DWDData()
 row = db.getValues()
@@ -56,5 +68,9 @@ if temperature != None and dwdTem != None and altwerte['temp'] != None and altwe
                       text='In deinem Zimmer ist es mit '+str(temperature)+' Grad kälter als '+str(dwdTem)+' Grad draußen.',
                         )
 
-r = requests.post(Conf.post['url'], data={'temp': temperature, 'humi': humidity, 'token': Conf.post['tocken'], 'dwdtemp': dwdTem, 'dwdhumi': dwdHum,})
-print(r.status_code, r.reason)
+try:
+    r = requests.post(Conf.post['url'], data={'temp': temperature, 'humi': humidity, 'token': Conf.post['tocken'], 'dwdtemp': dwdTem, 'dwdhumi': dwdHum,}, verify=False)
+    print(r.status_code, r.reason)
+except requests.exceptions.SSLError as e:
+    print(f"SSL Error: {e}")
+    print("POST request failed due to SSL certificate issue")

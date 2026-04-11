@@ -1,11 +1,25 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os, imp, sys, sqlite3
+import os, sys, sqlite3
 import datetime as DT
+import importlib.util
 from sqlite3 import Error
 def load_src(name, fpath):
-    return imp.load_source(name, os.path.join(os.path.dirname(__file__), fpath))
+    try:
+        full_path = os.path.join(os.path.dirname(__file__), fpath)
+        spec = importlib.util.spec_from_file_location(name, full_path)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            sys.modules[name] = module  # Register in sys.modules
+            return module
+        else:
+            print(f"Could not create spec for {name} from {full_path}")
+            return None
+    except Exception as e:
+        print(f"Error loading module {name} from {fpath}: {e}")
+        return None
  
 load_src("conf", "../conf.py")
 import conf as Conf

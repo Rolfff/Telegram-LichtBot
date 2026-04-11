@@ -3,7 +3,7 @@
 import socket
 from lib.lampeLib import light
 
-UDP_IP_ADDRESS = "192.168.0.2"
+UDP_IP_ADDRESS = "192.168.188.2"
 UDP_PORT_NO = 21324
 secTimeout = 1
 

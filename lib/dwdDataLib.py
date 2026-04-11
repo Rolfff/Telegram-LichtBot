@@ -1,8 +1,13 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import os, imp, sys
+import os, sys
+import importlib.util
+
 def load_src(name, fpath):
-    return imp.load_source(name, os.path.join(os.path.dirname(__file__), fpath))
+    spec = importlib.util.spec_from_file_location(name, os.path.join(os.path.dirname(__file__), fpath))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
  
 load_src("conf", "../conf.py")
 import conf as Conf

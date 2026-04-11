@@ -1,2 +1,8 @@
-python-telegram-bot==11.1.0
-Adafruit_Python_DHT
+python-telegram-bot==21.0
+RPi.GPIO
+requests
+pymysql
+numpy
+matplotlib
+Pillow
+adafruit-circuitpython-dht
