@@ -1,0 +1,52 @@
+{
+  "telegram": {
+    "token": "DEIN_BOT_TOKEN",
+    "admin_chat_id": "DEINE_ADMIN_CHAT_ID",
+    "password": "DEIN_PASSWORT"
+  },
+  "led": {
+    "clk_pin": 11,
+    "data_pin": 10,
+    "pixel_count": 31,
+    "num_segments": 6,
+    "pixel_map": [0,1,2,3,4,20,19,18,17,16,21,22,23,24,25,9,8,7,6,5,10,11,12,13,14,30,29,28,27,26],
+    "bottom_led": 15,
+    "default_speed": 0.1,
+    "default_rgb": {
+      "r": 255,
+      "g": 255,
+      "b": 255
+    }
+  },
+  "sensor": {
+    "temp_pin": 4
+},
+"mysql": {
+    "host": "localhost",
+    "user": "username",
+    "password": "password",
+    "database": "database_name",
+    "table": "temperatur"
+},
+  "database": {
+        "type": "sqlite",
+        "pathTemp": "/Database/tempdata.db",
+        "tempTable": "temperatur",
+        "deleteAfterWeeks": 4,
+        "pathUser": "/Database/userdata.db",
+        "userTable": "user"
+    },
+  "logging": {
+    "level": "ERROR",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "dwd": {
+        "url": "https://opendata.dwd.de/weather/weather_reports/poi/L886_-BEOB.csv",
+        "tempKey": "dry_bulb_temperature_at_2_meter_above_ground",
+        "humidityKey": "relative_humidity"
+    },
+    "security": {
+        "max_failed_attempts": 5,
+        "block_duration_days": 2
+    }
+}

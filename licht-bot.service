@@ -1,0 +1,22 @@
+[Unit]
+Description=Licht Telegram Bot
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=lichtbot
+Group=lichtbot
+WorkingDirectory=/opt/licht-bot
+ExecStart=/usr/bin/python3 /opt/licht-bot/licht_bot.py -c /opt/licht-bot/config.json
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=licht-bot
+
+# Umgebungsvariablen
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
