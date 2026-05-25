@@ -79,6 +79,7 @@ def check_mold_risk(temp, hum):
 
 mold_risk = check_mold_risk(temperature, humidity)
 if mold_risk:
+    token = config.get_telegram_token()
     users = userDB.get_all_mold_warning_users()
     for user in users:
         chat_id = user['chatID']
