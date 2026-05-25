@@ -25,12 +25,120 @@ siehe auch Quelle [2]:
 ## Todo:
 - Temperatur-Controler und SQL-DB von Webseite hinzufügen
 - BootBot.py erklären, Fals stromausfällt PI bot bootet
-- Kronjob Temeratur aufziechnen dokumentieren
 - Partymodus feritg progrmmieren Thread-Problem lösen
   - Lieber in [LedFx](https://ledfx.readthedocs.io/en/master/) intigrieren
-- Repositorys aufräumen, bzw struckur reinbringen. 
+- Repositorys aufräumen, bzw struckur reinbringen.
 - ledLib.py und lampeLib.py in Lib-Ornder verschieben
 - Integration von [WLED](https://kno.wled.ge/)
+
+## Installation
+
+### Voraussetzungen
+- Raspberry Pi 3 oder höher
+- Python 3.8 oder höher
+- pip3
+
+### Schritte
+
+1. Repository klonen oder herunterladen
+```bash
+cd /home/pi
+git clone <repository-url> Telegram-LichtBot_v2
+cd Telegram-LichtBot_v2
+```
+
+2. Virtuelle Umgebung erstellen und aktivieren
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. Abhängigkeiten installieren
+```bash
+pip3 install -r requirements.txt
+```
+
+4. Konfiguration erstellen
+```bash
+cp config.example.json config.json
+nano config.json
+```
+Passe die Konfiguration an (Telegram-Token, Admin-Chat-ID, etc.)
+
+5. System-User und Gruppe für den Bot erstellen
+```bash
+sudo useradd -r -s /bin/false lichtbot
+sudo groupadd lichtbot
+sudo usermod -a -G lichtbot lichtbot
+```
+
+6. Bot-Verzeichnis nach /opt/licht-bot verschieben
+```bash
+sudo mkdir -p /opt/licht-bot
+sudo cp -r /home/pi/Telegram-LichtBot_v2/* /opt/licht-bot/
+sudo chown -R lichtbot:lichtbot /opt/licht-bot
+```
+
+7. Datenbank-Verzeichnis erstellen
+```bash
+mkdir -p /home/pi/Data_LichtBot
+chmod 777 /home/pi/Data_LichtBot
+```
+
+8. Bot testen
+```bash
+python3 licht_bot.py
+```
+
+### Systemd Service Installation
+
+1. Service-Datei kopieren
+```bash
+sudo cp licht-bot.service /etc/systemd/system/
+```
+
+2. Service aktivieren und starten
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable licht-bot.service
+sudo systemctl start licht-bot.service
+```
+
+3. Status prüfen
+```bash
+sudo systemctl status licht-bot.service
+```
+
+4. Logs anzeigen
+```bash
+sudo journalctl -u licht-bot.service -f
+```
+
+### Cron-Job Konfiguration
+
+### Temperatur-Messung
+Ermittelt alle 10 Minuten Raum- und DWD-Werte und speichert diese in der Datenbank:
+
+```bash
+# Crontab-Eintrag (mit virtueller Umgebung und Konfiguration)
+*/10 * * * * cd /opt/licht-bot && /opt/licht-bot/venv/bin/python /opt/licht-bot/storeTemp_DB.py -c /opt/licht-bot/config.json
+```
+
+Beispiel für Installation:
+```bash
+# Crontab öffnen
+crontab -e
+
+# Zeile hinzufügen (Pfade anpassen)
+*/10 * * * * cd /opt/licht-bot && /opt/licht-bot/venv/bin/python /opt/licht-bot/storeTemp_DB.py -c /opt/licht-bot/config.json
+```
+
+### Cron-Job testen
+```bash
+# Manuelles Testen des Scripts
+cd /opt/licht-bot
+./venv/bin/python storeTemp_DB.py -c config.json
+```
 
 
 ## Quellen:
@@ -40,27 +148,4 @@ siehe auch Quelle [2]:
 [2]: https://tutorials-raspberrypi.de/raspberry-pi-luftfeuchtigkeit-temperatur-messen-dht11-dht22/ "Temperatur mit PI"
 2. Temperatur mit PI: https://tutorials-raspberrypi.de/raspberry-pi-luftfeuchtigkeit-temperatur-messen-dht11-dht22/
 
-## Durchgeführte Installationen:
-> sudo apt-get update
 
-> sudo apt-get upgrade
-
-> sudo apt-get install sqlite3
-
-> sudo apt-get install sqlitebrowser
-
-> sudo chmod 777 database
-
-> sudo pip3 install Adafruit_WS2801
-
-> sudo pip3 install Adafruit_Python_DHT
-
-> sudo pip3 install matplotlib
-
-> sudo pip3 install -U numpy
-
-> sudo apt-get install libatlas-base-dev
-
-> sudo pip3 install PyMySQL
-
-> sudo pip3 install requests

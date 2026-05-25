@@ -3,6 +3,7 @@ import pymysql
 import requests
 import board
 import adafruit_dht
+import argparse
 from lib.config import Config
 from lib.tempDatabaseLib import TempDatabase
 from lib.user_database import UserDatabase
@@ -10,7 +11,13 @@ from lib.dwdDataLib import DWDData
 from lib.telegram_utils import send_telegram_message_sync
 import sys
 
-config = Config()
+# CLI-Argumente parsen
+parser = argparse.ArgumentParser(description='Temperatur-Messung und Speicherung')
+parser.add_argument('-c', '--config', default='config.json',
+                   help='Pfad zur Konfigurationsdatei (Standard: config.json)')
+args = parser.parse_args()
+
+config = Config(args.config)
 
 # GPIO Pin für Temperatursensor - Standardwert falls nicht in config
 temp_sensor_pin = config.get('sensor.temp_pin', 4)
@@ -60,15 +67,39 @@ if float(temperature) > float(dwdTem.replace(',','.')) and float(altwerte['temp'
     token = config.get_telegram_token()
     users = userDB.getAllWetterAboUsers()
     for user in users:
-        send_telegram_message_sync(token, user['chatID'], 
-            f'In deinem Zimmer ist es mit {temperature} Grad wärmer als {dwdTem} Grad draußen.')
+        chat_id = user['chatID']
+        mode_type = user.get('mode_type', 'push')
+        
+        # Benachrichtigung basierend auf Modus senden
+        if mode_type == 'silent':
+            disable_notification = True  # Silent Notification
+        elif mode_type == 'push':
+            disable_notification = False  # Normale Push-Nachricht
+        else:
+            disable_notification = False  # Fallback: push
+        
+        send_telegram_message_sync(token, chat_id,
+            f'In deinem Zimmer ist es mit {temperature} Grad wärmer als {dwdTem} Grad draußen.',
+            disable_notification=disable_notification)
 
 if float(temperature) < float(dwdTem.replace(',','.')) and float(altwerte['temp']) >= float(altwerte['dwdtemp']):
     token = config.get_telegram_token()
     users = userDB.getAllWetterAboUsers()
     for user in users:
-        send_telegram_message_sync(token, user['chatID'],
-            f'In deinem Zimmer ist es mit {temperature} Grad kälter als {dwdTem} Grad draußen.')
+        chat_id = user['chatID']
+        mode_type = user.get('mode_type', 'push')
+        
+        # Benachrichtigung basierend auf Modus senden
+        if mode_type == 'silent':
+            disable_notification = True  # Silent Notification
+        elif mode_type == 'push':
+            disable_notification = False  # Normale Push-Nachricht
+        else:
+            disable_notification = False  # Fallback: push
+        
+        send_telegram_message_sync(token, chat_id,
+            f'In deinem Zimmer ist es mit {temperature} Grad kälter als {dwdTem} Grad draußen.',
+            disable_notification=disable_notification)
 
 #Send to Server
 try:

@@ -73,7 +73,7 @@ class UserDatabase:
             allowedToDatetime DATE DEFAULT NULL,
             failedAttempts INTEGER NOT NULL DEFAULT 0,
             blockedUntil DATE DEFAULT NULL,
-            notifyWetterAbboMode INTEGER NOT NULL DEFAULT 1,
+            notifyWetterAbboMode TEXT DEFAULT 'none',
             language_code TEXT DEFAULT 'en',
             PRIMARY KEY(chatID)
         );"""
@@ -134,11 +134,7 @@ class UserDatabase:
                 cursor.execute(f"ALTER TABLE {self.table_name} ADD COLUMN language_code TEXT DEFAULT 'en'")
                 connection.commit()
             
-            # Batterie-Info-Einstellung hinzufügen
-            if 'showBatteryInfo' not in existing_columns:
-                logging.info("Füge Spalte 'showBatteryInfo' hinzu...")
-                cursor.execute(f"ALTER TABLE {self.table_name} ADD COLUMN showBatteryInfo INTEGER NOT NULL DEFAULT 0")
-                connection.commit()
+            
             
             # Dynamisch Benachrichtigungs-Spalten aus der Config hinzufügen
             config = Config()
@@ -158,39 +154,46 @@ class UserDatabase:
         finally:
             connection.close()
 
-    def updateWetterAbo(self,chatID,wert=0):
-        sql =  "UPDATE "+self.table_name+" SET notifyWetterAbboMode = "+str(wert)+" WHERE chatID = '"+str(chatID)+"'"
+    def updateWetterAbo(self, chatID, mode='none'):
+        """Aktualisiert den Benachrichtigungsmodus für WetterAbo (none/silent/push)"""
+        if mode not in ['none', 'silent', 'push']:
+            mode = 'none'
+        sql = "UPDATE "+self.table_name+" SET notifyWetterAbboMode = '"+str(mode)+"' WHERE chatID = '"+str(chatID)+"'"
         self.execute(sql)
         
-    def getWetterAbo(self,chatID):
-        bool = 0
+    def getWetterAbo(self, chatID):
+        """Gibt den Benachrichtigungsmodus für WetterAbo zurück (none/silent/push)"""
+        mode = 'none'
         connection = sqlite3.connect(self.db_path)
         cursor = connection.cursor()
         sql = "SELECT notifyWetterAbboMode FROM "+self.table_name+" WHERE chatID='"+str(chatID)+"'"
         try:
             cursor.execute(sql)
-            bool = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            if result and result[0]:
+                mode = result[0]
         except Error as e:
             print(str(e)+" SQL-Query:"+str(sql))
         finally:
             connection.close()
-        return bool
+        return mode
         
     def getAllWetterAboUsers(self):
+        """Gibt alle Benutzer mit aktiviertem WetterAbo zurück (silent oder push)"""
         connection = sqlite3.connect(self.db_path)
         cursor = connection.cursor()
         users = []
         try:
-            cursor.execute("SELECT chatID FROM "+self.table_name+" WHERE notifyWetterAbboMode = '1' ")
+            cursor.execute("SELECT chatID, notifyWetterAbboMode FROM "+self.table_name+" WHERE notifyWetterAbboMode IN ('silent', 'push') ")
             rows = cursor.fetchall()
             for row in rows:
                 print('chatID'+str(row[0]))
-                user = {'chatID':row[0]}
+                user = {'chatID':row[0], 'mode_type': row[1] if row[1] else 'push'}
                 users.append(user)
         except Error as e:
             print(str(e)+" SQL-Query:"+str(sql))
         except Exception as e:
-            print(str(e))  
+            print(str(e))
         finally:
             connection.close()
             return users

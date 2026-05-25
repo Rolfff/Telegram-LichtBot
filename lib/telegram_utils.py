@@ -43,7 +43,7 @@ async def retry_telegram_call(func, *args, max_retries=10, base_delay=1, **kwarg
             # Andere Fehler nicht retryen
             raise
 
-def send_telegram_message_sync(token, chat_id, text, max_retries=3, base_delay=1):
+def send_telegram_message_sync(token, chat_id, text, max_retries=3, base_delay=1, disable_notification=False):
     """
     Sendet eine Telegram-Nachricht synchron mit Retry-Logik.
     Verwendet requests.post direkt mit Retry-Logik für NetworkErrors.
@@ -54,6 +54,7 @@ def send_telegram_message_sync(token, chat_id, text, max_retries=3, base_delay=1
         text: Nachrichtentext
         max_retries: Maximale Anzahl an Wiederholungsversuchen (Standard: 3)
         base_delay: Basis-Verzögerung in Sekunden für exponential backoff (Standard: 1)
+        disable_notification: True für silent Benachrichtigung (Standard: False)
     
     Returns:
         True bei Erfolg, False bei Fehler
@@ -67,7 +68,8 @@ def send_telegram_message_sync(token, chat_id, text, max_retries=3, base_delay=1
         try:
             response = requests.post(url, json={
                 'chat_id': chat_id,
-                'text': text
+                'text': text,
+                'disable_notification': disable_notification
             }, timeout=10)
             response.raise_for_status()
             return True
