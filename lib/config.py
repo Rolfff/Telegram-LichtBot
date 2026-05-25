@@ -220,10 +220,10 @@ class Config:
         return self.get('led.default_rgb', {'r': 255, 'g': 255, 'b': 255})
 
 # Konstanten für Bot-Zustände
-MAIN, LOGIN, ADMIN, SETTINGS, LIGHT = range(5)
+MAIN, LOGIN, ADMIN, SETTINGS, LIGHT, TEMPERATUR = range(6)
 
 # Modi werden in fritzdect_bot.py gesetzt (um zirkuläre Imports zu vermeiden)
-modeList = [None, None, None, None, None]
+modeList = [None, None, None, None, None, None]
 
 # Import hier am Ende der Datei, um zirkuläre Imports zu vermeiden
 def init_mode_list():
@@ -234,6 +234,7 @@ def init_mode_list():
         import lib.adminMode as AdminMode  
         import lib.settingsMode as SettingsMode
         import lib.lichtMode as LichtMode
+        import lib.temperaturMode as TemperaturMode
         
         # Globale modeList aktualisieren (nicht lokale Variable!)
         modeList[0] = None  # MAIN
@@ -241,6 +242,7 @@ def init_mode_list():
         modeList[2] = AdminMode
         modeList[3] = SettingsMode
         modeList[4] = LichtMode
+        modeList[5] = TemperaturMode  # TEMPERATUR
     except ImportError as e:
         # Fallback für Tests ohne vollständige Installation
         logging.warning(f"ImportError in init_mode_list: {e}")

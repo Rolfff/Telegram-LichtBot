@@ -63,6 +63,38 @@ else:
 
 db.insertValues(temperature,humidity,dwdTem,dwdHum)
 
+# Schimmel-Warnung prüfen
+def check_mold_risk(temp, hum):
+    """Prüft ob Schimmelrisiko besteht basierend auf Temperatur und Luftfeuchtigkeit"""
+    if temp is None or hum is None:
+        return False
+    
+    # Schimmelrisiko bei: Temperatur > 16°C und Luftfeuchtigkeit > 60%
+    # Oder: Temperatur > 20°C und Luftfeuchtigkeit > 55%
+    if temp > 20 and hum > 55:
+        return True
+    elif temp > 16 and hum > 60:
+        return True
+    return False
+
+mold_risk = check_mold_risk(temperature, humidity)
+if mold_risk:
+    users = userDB.get_all_mold_warning_users()
+    for user in users:
+        chat_id = user['chatID']
+        mode_type = user.get('mode_type', 'push')
+        
+        if mode_type == 'silent':
+            disable_notification = True
+        elif mode_type == 'push':
+            disable_notification = False
+        else:
+            continue
+        
+        send_telegram_message_sync(token, chat_id,
+            f'⚠️ Schimmel-Warnung: Hohe Luftfeuchtigkeit ({humidity}%) bei {temperature}°C. Bitte lüften!',
+            disable_notification=disable_notification)
+
 if float(temperature) > float(dwdTem.replace(',','.')) and float(altwerte['temp']) <= float(altwerte['dwdtemp']):
     token = config.get_telegram_token()
     users = userDB.getAllWetterAboUsers()

@@ -25,6 +25,9 @@ class UserDatabase:
         if not os.path.exists(self.db_path):
             logging.info(f"Datenbank {self.db_path} nicht vorhanden - Datenbank wird angelegt.")
             self.create_database()
+        
+        # Datenbank-Migration ausführen (für neue Spalten)
+        self.migrate_database()
     
     def execute(self, sql, params=None):
         connection = sqlite3.connect(self.db_path)
@@ -134,20 +137,11 @@ class UserDatabase:
                 cursor.execute(f"ALTER TABLE {self.table_name} ADD COLUMN language_code TEXT DEFAULT 'en'")
                 connection.commit()
             
-            
-            
-            # Dynamisch Benachrichtigungs-Spalten aus der Config hinzufügen
-            config = Config()
-            notifications = config.get_notifications()
-            default_mode_value = self._get_default_mode_value()
-            
-            for config_key in notifications.keys():
-                db_column = f"notify{config_key.title().replace('_', '')}"
-                
-                if db_column not in existing_columns:
-                    logging.info(f"Füge Spalte '{db_column}' hinzu...")
-                    cursor.execute(f"ALTER TABLE {self.table_name} ADD COLUMN {db_column} INTEGER NOT NULL DEFAULT {default_mode_value}")
-                    connection.commit()
+            # Schimmel-Warnung-Benachrichtigungsmodus hinzufügen (wie WetterAbo)
+            if 'notifyMoldWarningMode' not in existing_columns:
+                logging.info("Füge Spalte 'notifyMoldWarningMode' hinzu...")
+                cursor.execute(f"ALTER TABLE {self.table_name} ADD COLUMN notifyMoldWarningMode TEXT DEFAULT 'none'")
+                connection.commit()
                 
         except Error as e:
             logging.error(f"Fehler bei Datenbank-Migration: {e}")
@@ -783,6 +777,36 @@ class UserDatabase:
         sql = f"SELECT showBatteryInfo FROM {self.table_name} WHERE chatID = ?"
         result = self.fetch_one(sql, (chat_id,))
         return bool(result[0]) if result else False
+    
+    def update_mold_warning_notification_mode(self, chat_id, mode):
+        """Aktualisiert den Benachrichtigungsmodus für Schimmel-Warnung (none/silent/push)"""
+        if mode not in ['none', 'silent', 'push']:
+            logging.warning(f"Ungültiger Modus für Schimmel-Warnung: {mode}")
+            return False
+        sql = f"UPDATE {self.table_name} SET notifyMoldWarningMode = ? WHERE chatID = ?"
+        return self.execute(sql, (mode, chat_id))
+    
+    def get_mold_warning_notification_mode(self, chat_id):
+        """Gibt den Benachrichtigungsmodus für Schimmel-Warnung zurück"""
+        sql = f"SELECT notifyMoldWarningMode FROM {self.table_name} WHERE chatID = ?"
+        result = self.fetch_one(sql, (chat_id,))
+        return result[0] if result else 'none'
+    
+    def get_all_mold_warning_users(self):
+        """Gibt alle Benutzer mit aktivierter Schimmel-Warnung zurück (silent oder push)"""
+        connection = sqlite3.connect(self.db_path)
+        cursor = connection.cursor()
+        users = []
+        try:
+            cursor.execute(f"SELECT chatID, notifyMoldWarningMode FROM {self.table_name} WHERE notifyMoldWarningMode IN ('silent', 'push')")
+            rows = cursor.fetchall()
+            for row in rows:
+                users.append({'chatID': row[0], 'mode_type': row[1] if row[1] else 'push'})
+        except Error as e:
+            logging.error(f"Fehler beim Abrufen der Schimmel-Warnung-Benutzer: {e}")
+        finally:
+            connection.close()
+        return users
     
     def _save_notification_sent(self, notification_type, now, chat_ids):
         """Speichert, dass eine Benachrichtigung gesendet wurde"""

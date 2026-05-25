@@ -30,7 +30,7 @@ except ImportError:
     ConversationHandler = None
     CallbackQueryHandler = None
     logging.warning("telegram.ext module nicht gefunden - Bot läuft im Test-Modus")
-from lib.config import modeList, markupList, LOGIN, MAIN, ADMIN, SETTINGS, LIGHT, Config, genMarkupList
+from lib.config import modeList, markupList, LOGIN, MAIN, ADMIN, SETTINGS, LIGHT, TEMPERATUR, Config, genMarkupList
 from lib.user_database import UserDatabase
 from lib.telegram_utils import retry_telegram_call
 
@@ -38,6 +38,7 @@ import lib.adminMode as AdminMode
 import lib.loginMode as LoginMode
 import lib.settingsMode as SettingsMode
 import lib.lichtMode as LichtMode
+import lib.temperaturMode as TemperaturMode
 
 # Konfiguration (wird in main() mit CLI-Argument initialisiert)
 config = None
@@ -450,8 +451,8 @@ async def async_main():
     
     autoStatesHandler={
             MAIN: [
-                MessageHandler(filters.Regex('^(Temp\\.-Verlauf)$'), lambda update, context: StatistikModeOptimized.temp_history(update, context, context.user_data, markupList)),
-                CommandHandler('temp_history', lambda update, context: StatistikModeOptimized.temp_history(update, context, context.user_data, markupList)),
+                MessageHandler(filters.Regex('^(Temp\\.-Verlauf)$'), lambda update, context: TemperaturMode.default(update, context, context.user_data, markupList)),
+                CommandHandler('temp_history', lambda update, context: TemperaturMode.default(update, context, context.user_data, markupList)),
                 MessageHandler(filters.Regex('^(Einstellungen)$'), lambda update, context: SettingsMode.default(update, context, context.user_data, markupList)),
                 CommandHandler('einstellungen',  lambda update, context: SettingsMode.default(update, context, context.user_data, markupList)),
                 MessageHandler(filters.Regex('^(Licht)$'), lambda update, context: switchToLichtModus(update, context)),
@@ -511,7 +512,8 @@ async def async_main():
     callback_configs = [
         (SETTINGS, SettingsMode),
         (ADMIN, AdminMode),
-        (LIGHT, LichtMode)
+        (LIGHT, LichtMode),
+        (TEMPERATUR, TemperaturMode)
     ]
     
     for mode, module in callback_configs:
@@ -592,6 +594,13 @@ def main():
     # SettingsMode die globale Datenbank-Instanz setzen
     from lib.settingsMode import set_database as settings_set_database
     settings_set_database(db)
+    
+    # TemperaturMode die globale Datenbank-Instanzen setzen
+    from lib.temperaturMode import set_database as temp_set_database, set_temp_database as temp_set_temp_database
+    from lib.tempDatabaseLib import TempDatabase
+    temp_db = TempDatabase()
+    temp_set_database(db)
+    temp_set_temp_database(temp_db)
     
     # Logging und FritzBox nach config-Initialisierung
     if TELEGRAM_AVAILABLE and TELEGRAM_EXT_AVAILABLE:

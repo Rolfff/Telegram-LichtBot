@@ -1,5 +1,4 @@
 import os
-import importlib.util
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.dates import (YEARLY, DateFormatter,
@@ -8,25 +7,11 @@ import matplotlib.ticker as ticker
 from matplotlib.lines import Line2D
 from datetime import datetime, date, time
 import datetime as DT
-def load_src(name, fpath):
-    try:
-        full_path = os.path.join(os.path.dirname(__file__), fpath)
-        spec = importlib.util.spec_from_file_location(name, full_path)
-        if spec and spec.loader:
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            return module
-        else:
-            print(f"Could not create spec for {name} from {full_path}")
-            return None
-    except Exception as e:
-        print(f"Error loading module {name} from {fpath}: {e}")
-        return None
- 
-load_src("conf", "../conf.py")
-import conf as Conf
+from lib.config import Config
 
 class TempPlot:
+    def __init__(self):
+        self.config = Config()
 
     def plotNow(self,werte):
         s = []
@@ -79,7 +64,8 @@ class TempPlot:
         
         ax.grid(True)
         fig.autofmt_xdate()
-        fig.savefig(Conf.tempExport['file'])
+        temp_export = self.config.get('tempExport', {'file': '/tmp/temp_plot.png'})
+        fig.savefig(temp_export['file'])
         
         plt.show()
         
@@ -92,13 +78,11 @@ class TempPlot:
         #    reply_markup=user_data['keyboard'])
 
 def main():
-    
-    from tempDatabaseLib import TempDatabase
+    from lib.tempDatabaseLib import TempDatabase
     tmpDB = TempDatabase()
     db = TempPlot()
     try:
-        #db.plot(tmpDB,Conf.tempExport['days'])
-        db.plot(tmpDB,14)
+        db.plot(tmpDB, 14)
     except Exception as e:
         print('Error: '+str(e))
     
