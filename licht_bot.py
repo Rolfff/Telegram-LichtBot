@@ -182,7 +182,8 @@ async def checkAuthentifizierung(update, user_data):
                     )
             else:
                 user_data['isAuthenticated'] = False
-                if not db.is_user_blocked(int(chat_id)):
+                # Nur "Berechtigung abgelaufen" anzeigen, wenn User existiert aber keinen Zugriff mehr hat
+                if db.user_exists(int(chat_id)) and not db.is_user_blocked(int(chat_id)):
                     await retry_telegram_call(
                         update.message.reply_text,
                         'Ohh... Deine Berechtigung ist abgelaufen.',
@@ -238,6 +239,12 @@ async def selectModeFunc(update: Update, context: ContextTypes.DEFAULT_TYPE):
             elif context.user_data['status'] == LOGIN:
                 # User wurde nicht authentifiziert, bleibe im LOGIN
                 return LOGIN
+        else:
+            # Bei LOGIN-Status prüfen ob User inzwischen freigeschaltet wurde
+            await checkAuthentifizierung(update, context.user_data)
+            # Wenn User freigeschaltet wurde, automatisch auf MAIN wechseln
+            if context.user_data['status'] == MAIN and context.user_data.get('isAuthenticated'):
+                return MAIN
         
         # Bei LOGIN-Status immer die Login-Funktion aufrufen
         if context.user_data['status'] == LOGIN:
@@ -586,8 +593,9 @@ def main():
     # UserDatabase nach config-Initialisierung erstellen
     db = UserDatabase()
     
-    # LoginMode die globale Datenbank-Instanz setzen
+    # LoginMode die globale Datenbank- und Config-Instanz setzen
     LoginMode.set_database(db)
+    LoginMode.set_config(config)
     # AdminMode die globale Datenbank- und Config-Instanz setzen
     AdminMode.set_database(db)
     AdminMode.set_config(config)

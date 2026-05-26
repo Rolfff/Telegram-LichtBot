@@ -51,7 +51,8 @@ def load_module(name, filepath):
 
 # Load configuration and database modules
 config_module = load_module("config", "config.py")
-config = config_module.Config()
+# Config wird später von außen gesetzt, um die gleiche Instanz zu verwenden
+config = None
 user_database_module = load_module("user_database", "user_database.py")
 
 # Import Konstanten aus config
@@ -64,6 +65,11 @@ def set_database(database_instance):
     """Setzt die globale Datenbank-Instanz"""
     global db
     db = database_instance
+
+def set_config(config_instance):
+    """Setzt die globale Config-Instanz"""
+    global config
+    config = config_instance
 
 
 # Funktionen hier registrieren für Admin-Mode
@@ -80,9 +86,14 @@ async def default(update, context, user_data, markupList):
 
 async def login(update, context, user_data, markupList):
     """Login-Verarbeitung"""
-    global db
+    global db, config
+    logger.debug(f"Login-Funktion aufgerufen - db={db is not None}, config={config is not None}")
+    
     if db is None:
         await update.message.reply_text("❌ Datenbank nicht verfügbar. Bitte kontaktiere den Admin.")
+        return LOGIN
+    if config is None:
+        await update.message.reply_text("❌ Konfiguration nicht verfügbar. Bitte kontaktiere den Admin.")
         return LOGIN
     
     # User-Informationen initialisieren falls noch nicht vorhanden
@@ -93,6 +104,12 @@ async def login(update, context, user_data, markupList):
     
     password = update.message.text
     chat_id = update.effective_chat.id
+    
+    logger.debug(f"Login-Daten - password='{password}', chat_id={chat_id}")
+    
+    # Debug: Logge Passwort-Vergleich
+    config_password = config.get_telegram_password()
+    logger.debug(f"Login-Versuch - Chat-ID: {chat_id}, Eingegebenes Passwort: '{password}', Config-Passwort: '{config_password}', Vergleich: {password == config_password}")
     
     # Prüfen ob Benutzer geblockt ist
     if db.is_user_blocked(chat_id):
@@ -113,7 +130,9 @@ async def login(update, context, user_data, markupList):
         )
         return user_data['status']  # Bleibt im LOGIN-Status
     
-    if password == config.get_telegram_password():
+    # Passwort-Vergleich mit Whitespace-Handling
+    config_password = config.get_telegram_password()
+    if password and config_password and password.strip() == config_password.strip():
         # Erfolgreicher Login - fehlgeschlagene Versuche zurücksetzen
         db.reset_failed_attempts(chat_id)
         
